@@ -3,15 +3,15 @@
 This code was made as an addon component for the SiEPIC PDK[1]. The code can generate polygons for spirals with gratings.
 
 ## Requirements
-SiEPIC PDK[1]
-Klayout[2]
+- SiEPIC PDK[1]
+- Klayout[2]
 
 ## Installation
 - Install the SiEPIC PDK into Klayout
 - Place *PCM_Spiral_Pcells.lym* in your KLayout/tech/EBeam/pymacros folder
 - Place *Layout_PCMSpirals.lym* in your KLayout/pymacros
 
-##How to use
+## How to use
 You can create individual devices via the *instance* button in Klayout. This button will only show up after the SiEPIC PDK is installed and you have enabled *editing mode*.
 To use the layout script to create automatic designs, open the macro development window (F5) and then locate the *Layout_PCMSpirals* file. The script can take in arrays of parameters and iterates a whole layout for each combination.
 
