@@ -13,6 +13,7 @@ This code was made as an addon component for the [SiEPIC PDK](https://github.com
 
 ## How to use
 You can create individual devices via the *instance* button in Klayout. This button will only show up after the SiEPIC PDK is installed and you have enabled *editing mode*.
+
 To use the layout script to create automatic designs, open the macro development window (F5) and then locate the *Layout_PCMSpirals* file. The script can take in arrays of parameters and iterates a whole layout for each combination.
 
 ## Technical Details
