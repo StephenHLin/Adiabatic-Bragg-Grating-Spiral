@@ -20,5 +20,12 @@ To use the layout script to create automatic designs, open the macro development
 - The spiral is drawn based on the Integrated Bragg gratings in spiral waveguides[1] by Alexandre D. Simard. The gratings are drawn by creating 'clone' spirals with radius that match the waveguide widths and then scaling them via a scalar (found by calculating the inverse of the slope of the whole grating)
 - The drawn length of the spiral is calculated by a step size based on the angle. Therefore it is possible the lengths could differ by a miniscule amount from expected.
 
+## Features
+- [x] Orthogonal Gratings
+- [ ] Chirping of grating period
+- [ ] Waveguide width increase/decrease from input to output
+- [ ] Slab waveguide
+
+
 ## References
 [1] https://www.osapublishing.org/oe/fulltext.cfm?uri=oe-21-7-8953&id=252032
