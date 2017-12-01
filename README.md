@@ -26,7 +26,7 @@ To use the layout script to create automatic designs, open the macro development
 - [ ] Waveguide width increase/decrease from input to output
 - [ ] Slab waveguide
 
-##Issues being investigated
+## Issues being investigated
 - best gap: to avoid coupling whilst the spiral is growing.
 
 ## References
