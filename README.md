@@ -17,8 +17,11 @@ You can create individual devices via the *instance* button in Klayout. This but
 To use the layout script to create automatic designs, open the macro development window (F5) and then locate the *Layout_PCMSpirals* file. The script can take in arrays of parameters and iterates a whole layout for each combination.
 
 ## Technical Details
-- The spiral is drawn based on the Integrated Bragg gratings in spiral waveguides[1] by Alexandre D. Simard. The gratings are drawn by creating 'clone' spirals with radius that match the waveguide widths and then scaling them via a scalar (found by calculating the inverse of the slope of the whole grating)
+- The spiral is drawn based on the Integrated Bragg gratings4:34 PM 12/1/2017 in spiral waveguides[1] by Alexandre D. Simard. The gratings are drawn by creating 'clone' spirals with radius that match the waveguide widths and then scaling them via a scalar (found by calculating the inverse of the slope of the whole grating)
 - The drawn length of the spiral is calculated by a step size based on the angle. Therefore it is possible the lengths could differ by a miniscule amount from expected.
+
+Below is an image of the parameters to clear up confusion:
+![Alt text](/images/Parameters.PNG)
 
 ## Features
 - [x] Orthogonal Gratings
