@@ -21,6 +21,7 @@ To use the layout script to create automatic designs, open the macro development
 - The drawn length of the spiral is calculated by a step size based on the angle. Therefore it is possible the lengths could differ by a miniscule amount from expected.
 
 Below is an image of the parameters to clear up confusion:
+
 ![Alt text](/images/Parameters.PNG)
 
 ## Features
