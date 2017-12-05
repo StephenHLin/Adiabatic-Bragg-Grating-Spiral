@@ -28,7 +28,7 @@ Below is an image of the parameters to clear up confusion:
 - [x] Orthogonal Gratings
 - [ ] Chirping of grating period
 - [ ] Waveguide width increase/decrease from input to output
-- [ ] Slab waveguide
+- [x] Slab waveguide
 
 ## Issues being investigated
 - best gap: to avoid coupling whilst the spiral is growing.
