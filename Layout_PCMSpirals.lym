@@ -49,12 +49,12 @@ pol = 'te'
 #Shared Sweep
 #sweep_length=[1, 2, 4, 6, 8, 10]
 #sweep_corrugation = [80, 100, 120]
-sweep_length=[1,2,4]
+sweep_length=[10]
 sweep_corrugation = [120]
 
 #450
 #sweep_period450=[392, 380, 370]
-sweep_period450=[370,380,392]
+sweep_period450=[370,380]
 #400
 #sweep_period400=[413, 396, 382]
 #############################################
@@ -153,15 +153,16 @@ for i in range(len(sweep_corrugation)):
           ##########################
           
           #### SPIRAL PCELL ######
-          pcell = ly.create_cell("PCMSpiral_BraggGrating", "PCMSpiral", {"silayer": LayerSi , "w": wg_width, "DeviceLength": devicelength, "Cwidth": cwidth, "pitch": period, "Chirp_Rate": 0, "n": 1800 , "textpolygon": 0, "textl": pya.LayerInfo(10, 0), "pinrec": pya.LayerInfo(69, 0), "textl": pya.LayerInfo(68, 0)} )
+          pcell = ly.create_cell("[1] Spiral_BraggGrating", "Adiabatic_Spirals", {"silayer": LayerSi , "w": wg_width, "DeviceLength": devicelength, "Cwidth": cwidth, "pitch": period, "Chirp_Rate": 0, "n": 1800 , "textpolygon": 0, "textl": pya.LayerInfo(10, 0), "pinrec": pya.LayerInfo(69, 0), "textl": pya.LayerInfo(68, 0)} )
           print ("Cell: pcell: #%s" % pcell.cell_index())
           ## SPIRAL BOUNDARY BOX DIMENSIONS FOR ROUTING
           devicewidth = pcell.bbox().width()*dbu
           deviceheight = pcell.bbox().height()*dbu
           devicecenterX = devicewidth/dbu#x +devicewidth/dbu
-          devicecenterY = deviceheight/2 / dbu
-          devicebottom = 127/2 -deviceheight/2 +wg_width/2*dbu
-          devicetop = deviceheight -wg_width/2*dbu
+          devicecenterY = deviceheight/2 / dbu         
+          devicebottom = wg_bend_radius+0.1
+          devicetop = deviceheight+wg_bend_radius-0.1
+          
           deviceleft = 0.5*devicewidth+wg_width/2*dbu#x +0.5*devicewidth+wg_width/2*dbu
           deviceright = 1.5*devicewidth-wg_width/2*dbu#x +1.5*devicewidth-wg_width/2*dbu
           ########################
@@ -169,14 +170,15 @@ for i in range(len(sweep_corrugation)):
           start_point = [ x, y ]
           
           #LENGTH BASED
-          t1 = pya.Trans(pya.Trans.R0, devicecenterX+x/dbu, devicecenterY+y/dbu)
+          t1 = pya.Trans(pya.Trans.R0, devicecenterX+x/dbu, devicecenterY+y/dbu+wg_bend_radius/dbu)
           instance = cell.insert(pya.CellInstArray(pcell.cell_index(), t1))
           
           if deviceheight &lt; 127:
-            points_gc1 = [[0,127],[deviceright,127],[deviceright,devicecenterY*dbu]]
+            points_gc1 = [[0,127],[deviceright,127],[deviceright,devicetop]]
           else:
-            points_gc1 = [[0,127],[deviceleft-wg_bend_radius,127],[deviceleft-wg_bend_radius,devicetop+wg_bend_radius],[deviceright,devicetop+wg_bend_radius],[deviceright,devicecenterY*dbu]] 
-          points_gc4 = [[0,0],[deviceleft,0], [deviceleft,devicecenterY*dbu]]
+            #points_gc1 = [[0,127],[deviceleft-wg_bend_radius,127],[deviceleft-wg_bend_radius,devicetop+2*wg_bend_radius],[deviceright,devicetop+2*wg_bend_radius],[deviceright,deviceheight]] 
+            points_gc1 = [[0,127],[deviceleft-wg_bend_radius,127],[deviceleft-wg_bend_radius,devicetop+2*wg_bend_radius],[deviceright,devicetop+2*wg_bend_radius],[deviceright,devicetop]] 
+          points_gc4 = [[0,0],[deviceleft,0], [deviceleft,devicebottom]]
     
           layout_waveguide_rel(cell, LayerSi, start_point, points_gc1, wg_width*dbu, wg_bend_radius)
           layout_waveguide_rel(cell, LayerSi, start_point, points_gc4, wg_width*dbu, wg_bend_radius)
@@ -223,15 +225,15 @@ for i in range(len(sweep_corrugation)):
           start_point = [ x, y ]
           
           #LENGTH BASED
-          t1 = pya.Trans(pya.Trans.R0, devicecenterX+x/dbu+d2offset, devicecenterY+y/dbu)
+          t1 = pya.Trans(pya.Trans.R0, devicecenterX+x/dbu+d2offset, devicecenterY+y/dbu+wg_bend_radius/dbu)
           instance = cell2.insert(pya.CellInstArray(pcell.cell_index(), t1))
           
           if deviceheight &lt; 127:
-            points_gc1 = [[0+d2offset*dbu,127],[deviceright+d2offset*dbu,127],[deviceright+d2offset*dbu,devicecenterY*dbu]]
+            points_gc1 = [[0+d2offset*dbu,127],[deviceright+d2offset*dbu,127],[deviceright+d2offset*dbu,devicetop]]
             #points_gc1 = [[0+d2offset*dbu,127],[deviceright+d2offset*dbu,127],[deviceright+d2offset*dbu,devicecenterY*dbu]]
           else:
-            points_gc1 = [[0+d2offset*dbu,127],[deviceleft-wg_bend_radius+d2offset*dbu,127],[deviceleft-wg_bend_radius+d2offset*dbu,devicetop+wg_bend_radius],[deviceright+d2offset*dbu,devicetop+wg_bend_radius],[deviceright+d2offset*dbu,devicecenterY*dbu]] 
-          points_gc4 = [[0+d2offset*dbu,0],[deviceleft+d2offset*dbu,0], [deviceleft+d2offset*dbu,devicecenterY*dbu]]
+            points_gc1 = [[0+d2offset*dbu,127],[deviceleft-wg_bend_radius+d2offset*dbu,127],[deviceleft-wg_bend_radius+d2offset*dbu,devicetop+wg_bend_radius],[deviceright+d2offset*dbu,devicetop+wg_bend_radius],[deviceright+d2offset*dbu,devicetop]] 
+          points_gc4 = [[0+d2offset*dbu,0],[deviceleft+d2offset*dbu,0], [deviceleft+d2offset*dbu,devicebottom]]
     
           layout_waveguide_rel(cell2, LayerSi, start_point, points_gc1, wg_width*dbu, wg_bend_radius)
           layout_waveguide_rel(cell2, LayerSi, start_point, points_gc4, wg_width*dbu, wg_bend_radius)

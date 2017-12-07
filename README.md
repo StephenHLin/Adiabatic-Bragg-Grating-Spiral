@@ -30,8 +30,9 @@ Below is an image of the parameters to clear up confusion:
 - [ ] Waveguide width increase/decrease from input to output
 - [x] Slab waveguide
 
-## Issues being investigated
-- best gap: to avoid coupling whilst the spiral is growing.
+## Known Issues
+- Gap: The gap is smaller than designated in the first rotation as the spiral is still growing. Suggested solution: set the gap bigger than intended
+- Rounding: Spirals are drawn via dpoints (double points) and thus sometimes it results in rounding errors of the smallest dbu set (0.001 default). Suggested: Overlap the areas that have these errors
 
 ## References
 [1] https://www.osapublishing.org/oe/fulltext.cfm?uri=oe-21-7-8953&id=252032

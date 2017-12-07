@@ -82,7 +82,7 @@ def angle_from_corrugation(r, length, grating_length):
     current_total_length=0
     yield angle#yield acts as a return but gives a generator. This early yield is to return the 0 value
     
-    while current_total_length &lt; length:
+    while current_total_length &lt; length+grating_length: #The spiral gen doesnt draw the last grating because it needs to calculate slope, thus we draw an extra
         while current_length &lt; grating_length: #if the length has no reached the grating length, continue
             deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha)    
             r_spiral = (r*sign(angle))+(gap*angle/pi)
@@ -127,62 +127,30 @@ def spiral_gen(r,angle_array,w,cwidth,grating_length):
       else:
         print ("Grating_Length is 0, use legacy function")
 
-      #Calculate the Coordinate for each grating and apply the slope modifer
-      deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0     
+      #Calculate the Coordinate for each grating and apply the slope modifer  
       #Outer, C1
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
       S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX    
       xcoor_Winc1 = S.real+dy*(w+cwidth)
-      ycoor_Winc1 = S.imag-dx*(w+cwidth)
-      
+      ycoor_Winc1 = S.imag-dx*(w+cwidth)     
       #Outer C2
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
       S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
       xcoor_Winc2 = S.real+dy*(w-cwidth)
       ycoor_Winc2 = S.imag-dx*(w-cwidth)
       #Inner, C1
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
       S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
       xcoor_Winc3 = S.real-dy*(w-cwidth)
       ycoor_Winc3 = S.imag+dx*(w-cwidth)
       #Inner C2
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
+
       S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
       xcoor_Winc4 = S.real-dy*(w+cwidth)
       ycoor_Winc4 = S.imag+dx*(w+cwidth)
       
       if cwidth!=0:  
-        yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc2,ycoor_Winc2,xcoor_Winc3,ycoor_Winc3,xcoor_Winc4,ycoor_Winc4
+        yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc2,ycoor_Winc2,xcoor_Winc3,ycoor_Winc3,xcoor_Winc4,ycoor_Winc4,dx,dy
       else:
-        yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc3,ycoor_Winc3
+        yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc3,ycoor_Winc3,dx,dy
     
-    #for the final point, uses the final angle and appends it as the original equation would've (refer to legacy version)
-    #this is because the forced perpendicular would cause some polygonal issues that isnt worth the fix
-    #plus at the outer radius, the final grating is pretty much perpendicular anyways.
-    angle = angle_array[-1]  
-    deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0     
-    #Outer, C1
-    r_spiral = ((r+w+cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX    
-    xcoor_Winc1 = S.real
-    ycoor_Winc1 = S.imag    
-    #Outer C2
-    r_spiral = ((r+w-cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-    xcoor_Winc2 = S.real
-    ycoor_Winc2 = S.imag
-    #Inner, C1
-    r_spiral = ((r-w+cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-    xcoor_Winc3 = S.real
-    ycoor_Winc3 = S.imag
-    #Inner C2
-    r_spiral = ((r-w-cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-    xcoor_Winc4 = S.real
-    ycoor_Winc4 = S.imag
-    yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc2,ycoor_Winc2,xcoor_Winc3,ycoor_Winc3,xcoor_Winc4,ycoor_Winc4
-
 def spiral_gen_singlewall_outer(r,angle_array,w,cwidth,grating_length):
     #This generates the spirals coordinates from the given angle arrays.        
     for i in frange(0,len(angle_array)-1,1):
@@ -380,7 +348,7 @@ def sort_coord(bool_order,xinc,yinc,xdec,ydec):
             bool_order = not bool_order
     return x_array,y_array            
        
-def finish_spiral(r,finalangle,w):
+def finish_spiral(r,finalangle,w,dx,dy):
     #This finishes the spiral to the 0 or 180 position with a uniform waveguide, also makes it easier to match via pins
     #The radius of the individual walls, basically draws 2 lines for each wall of the waveguide and appends hte points
     r_Winc = r+w
@@ -391,8 +359,19 @@ def finish_spiral(r,finalangle,w):
     x_dec=[]
     y_dec=[]
     
+    deltaX = (r*sign(finalangle))*cmath.exp(-abs(finalangle)/alpha)    
+    r_spiral = (r*sign(finalangle))+(gap*finalangle/pi)
+    S = (r_spiral*cmath.exp(j*abs(finalangle)))-deltaX  
+    x_inc.append(S.real+dy*w)
+    y_inc.append(S.imag-dx*w)
+        
+    r_spiral = (r*sign(finalangle))+(gap*finalangle/pi)
+    S = (r_spiral*cmath.exp(j*abs(finalangle)))-deltaX  
+    x_dec.append(S.real-dy*w)
+    y_dec.append(S.imag+dx*w)
+
     nextpie = math.ceil(finalangle/ (pi)) * pi        
-    for angle in frange(finalangle,nextpie,0.01):
+    for angle in frange(finalangle+0.01,nextpie,0.01):
         deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha)
         
         r_spiral = (r_Winc*sign(angle))+(gap*angle/pi)
@@ -423,10 +402,16 @@ def finish_spiral(r,finalangle,w):
     S = (r_spiral*cmath.exp(j*abs(nextpie)))-deltaX 
     endx = S.real
 
-    if round(nextpie) %2 ==0:
+    if math.ceil(nextpie/pi) %2 ==0:
       isEven = True
+      #print ("even")
+      #print (nextpie)
+      #print (math.ceil(nextpie/pi) %2)
     else:
       isEven = False
+      #print ("odd")
+      #print (nextpie)
+      #print (math.ceil(nextpie/pi) %2)
     
     return x_inc,y_inc,x_dec,y_dec,endx,isEven
     
@@ -512,7 +497,8 @@ class PCMSpiralBraggGrating(pya.PCellDeclarationHelper):
         left2_y_inc.append(coord[5])
         left2_x_dec.append(coord[6])
         left2_y_dec.append(coord[7])
-    
+    dx = coord[8]
+    dy = coord[9]
     #Flip coords for right side coords
     right_x_inc = [i*-1 for i in left_x_inc]
     right_y_inc = [i*-1 for i in left_y_inc]
@@ -550,17 +536,18 @@ class PCMSpiralBraggGrating(pya.PCellDeclarationHelper):
     del right2y[0]
     
     #UNIFORM SECTION
+    
     del left1x[-1]
     del left1y[-1]
     del left2x[-1]
     del left2y[-1]
-    
+
     del right1x[-1]
     del right1y[-1]
     del right2x[-1]
     del right2y[-1]
-     
-    result = finish_spiral(r,angle_array[-1],w)
+ 
+    result = finish_spiral(r,angle_array[-2],w,dx,dy)
     left1x.extend(result[0])
     left1y.extend(result[1])
     left2x.extend(result[2])
@@ -598,22 +585,27 @@ class PCMSpiralBraggGrating(pya.PCellDeclarationHelper):
     
     # Create the pins, as short paths:
     pin_length = 200 # database units, = 0.2 microns
-    DeviceHeight = self.cell.bbox().height()*dbu
     LendX = result[4]
     RendX = -result[4]
     isEven = result[5] #Left and Right sides swap depending on the circle drawn, this returns which side it should be on
-    MOD = 1 #Based on the side, modifies certain values that are just scalar additions below
     
     if isEven == True:
-      DeviceHeight *= -1
+      DeviceHeight = self.cell.bbox().height()*dbu
+      MOD = 1 #Based on the side, modifies certain values that are just scalar additions below    
+    else:
+      DeviceHeight = -self.cell.bbox().height()*dbu
       MOD = -1
-       
-    #Draw waveguides to the boundary of the box
-    points_wg1 = [[0,0],[0,-DeviceHeight/2]] 
-    layout_waveguide_rel(self.cell, LayerSi, [RendX,0], points_wg1, w*2, 15)    
-    points_wg2 = [[0,0],[0,DeviceHeight/2]]
-    layout_waveguide_rel(self.cell, LayerSi, [LendX,0], points_wg2, w*2, 15)     
-  
+    
+    #waveguides, didnt use pathing because it has some rounding errors in terms of width   
+    dpts=[pya.DPoint(LendX+w, 0),pya.DPoint(LendX-w, 0),pya.DPoint(LendX-w, DeviceHeight/2),pya.DPoint(LendX+w, DeviceHeight/2 )]
+    dpolygon = DPolygon(dpts)
+    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    shapes(LayerSiN).insert(element)
+    
+    dpts=[pya.DPoint(RendX+w, 0),pya.DPoint(RendX-w, 0),pya.DPoint(RendX-w, -DeviceHeight/2),pya.DPoint(RendX+w, -DeviceHeight/2 )]
+    dpolygon = DPolygon(dpts)
+    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    shapes(LayerSiN).insert(element)
 
     pin = pya.Path([Point((RendX)/dbu, -DeviceHeight/2/dbu-pin_length/2), Point((RendX)/dbu,-DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
     shapes(LayerPinRecN).insert(pin)
@@ -630,11 +622,311 @@ class PCMSpiralBraggGrating(pya.PCellDeclarationHelper):
     shape.text_size = 0.4/dbu
     
     # Create the device recognition layer
-    dev = Box((LendX)/dbu+w*MOD/dbu, -DeviceHeight/2/dbu, (RendX)/dbu-w*MOD/dbu, DeviceHeight/2/dbu )
+    #dev = Box((LendX)/dbu+w*MOD/dbu, -DeviceHeight/2/dbu-pin_length/2, (RendX)/dbu-w*MOD/dbu, DeviceHeight/2/dbu+pin_length/2 )
+    #I literally declared the size of this box based on the other box. Lol.
+    dev = Box(-self.cell.bbox().width()/2,-self.cell.bbox().height()/2+pin_length/2,self.cell.bbox().width()/2,self.cell.bbox().height()/2-pin_length/2)
     shapes(LayerDevRecN).insert(dev)
           
     print("Done drawing the layout for - PCM Spiral")
+
+class PCMSpiralBraggGratingSlab(pya.PCellDeclarationHelper):
+
+  def __init__(self):
+
+    # Important: initialize the super class
+    super(PCMSpiralBraggGratingSlab, self).__init__()
+
+    # declare the parameters
+    self.param("silayer", self.TypeLayer, "Si Layer", default = LayerInfo(1, 0))
+    self.param("w", self.TypeDouble, "Waveguide Width [nm]", default = 400)
+    self.param("DeviceLength", self.TypeDouble, "Device Path Length [mm]", default = 0.5)
+    self.param("Cwidth", self.TypeDouble, "Corrugation Width [nm]", default = 80)
+    self.param("period", self.TypeDouble, "period [nm]", default = 420 ) 
+    self.param("silayer2", self.TypeLayer, "Slab Si Layer", default = LayerInfo(31, 0))
+    self.param("sw", self.TypeDouble, "Slab Width [nm]", default = 500 )
+    self.param("textl", self.TypeLayer, "Text Layer", default = LayerInfo(10, 0))
+    self.param("pinrec", self.TypeLayer, "PinRec Layer", default = LayerInfo(69, 0))
+    self.param("devrec", self.TypeLayer, "DevRec Layer", default = LayerInfo(68, 0))
     
+  def display_text_impl(self):
+    # Provide a descriptive text for the cell
+    return "SpiralBraggGratingSlab"
+
+  def can_create_from_shape_impl(self):
+    return False   
+  
+  def produce_impl(self):
+    ly = self.layout
+    shapes = self.cell.shapes
+
+    LayerSi = self.silayer
+    LayerSiN = ly.layer(LayerSi)
+    TextLayerN = ly.layer(self.textl)
+    LayerPinRecN = ly.layer(self.pinrec)
+    LayerDevRecN = ly.layer(self.devrec)
+    TextLayerN = ly.layer(self.textl)
+    LayerSiN_Slab = ly.layer(self.silayer2)
+    
+    w = self.w*10**-3/2.0 #drawing from center line, only have to add half
+    length = self.DeviceLength*1000/2.0#only drawing half and then copying
+    cwidth = self.Cwidth*10**-3/2.0 #same reason as width
+    grating_length = self.period/2.0*10**-3
+    sw = self.sw*10**-3/2.0
+     
+    #Step1 Find the Angles of each grating#######    
+    angle_array=[]
+    for theta in angle_from_corrugation(r,length,grating_length):
+        angle_array.append(theta)
+    ####################
+    
+    #####################
+    #Step2 Find the Coordinates of the gratings via the angles
+    #Wall1 of the Left    
+    left_x_inc = []
+    left_y_inc = []
+    left_x_dec = []
+    left_y_dec = []
+    #Wall2 of the Left
+    left2_x_inc = []
+    left2_y_inc = []
+    left2_x_dec = []
+    left2_y_dec = []
+    
+    #Calculate the Spiral Coordinates
+    for coord in spiral_gen(r,angle_array,w,cwidth,grating_length):
+        left_x_inc.append(coord[0])
+        left_y_inc.append(coord[1])
+        left_x_dec.append(coord[2])
+        left_y_dec.append(coord[3])
+        
+        left2_x_inc.append(coord[4])
+        left2_y_inc.append(coord[5])
+        left2_x_dec.append(coord[6])
+        left2_y_dec.append(coord[7])
+    dx = coord[8]
+    dy = coord[9]
+    #Flip coords for right side coords
+    right_x_inc = [i*-1 for i in left_x_inc]
+    right_y_inc = [i*-1 for i in left_y_inc]
+    right_x_dec = [i*-1 for i in left_x_dec]
+    right_y_dec = [i*-1 for i in left_y_dec]
+    
+    right2_x_inc = [i*-1 for i in left2_x_inc]
+    right2_y_inc = [i*-1 for i in left2_y_inc]
+    right2_x_dec = [i*-1 for i in left2_x_dec]
+    right2_y_dec = [i*-1 for i in left2_y_dec]
+    #Obtain a sorted list of the coordinates of one wall.
+    #repeat for the rest
+    result = sort_coord(True,left_x_inc,left_y_inc,left_x_dec,left_y_dec)
+    left1x = result[0]
+    left1y = result[1]
+    result = sort_coord(False,left2_x_inc,left2_y_inc,left2_x_dec,left2_y_dec)
+    left2x = result[0]
+    left2y = result[1]
+    
+    result = sort_coord(False,right_x_inc,right_y_inc,right_x_dec,right_y_dec)
+    right1x = result[0]
+    right1y = result[1]
+    #Delete the first two points as they over lap
+    del right1x[0]#calls the same index here because once you remove 0, 1 becomes 0, and so on and so forth
+    del right1x[0]
+    del right1y[0]
+    del right1y[0]
+    
+    result = sort_coord(True,right2_x_inc,right2_y_inc,right2_x_dec,right2_y_dec)
+    right2x = result[0]
+    right2y = result[1]
+    del right2x[0]
+    del right2x[0]
+    del right2y[0]
+    del right2y[0]
+    
+    #UNIFORM SECTION
+    
+    del left1x[-1]
+    del left1y[-1]
+    del left2x[-1]
+    del left2y[-1]
+
+    del right1x[-1]
+    del right1y[-1]
+    del right2x[-1]
+    del right2y[-1]
+ 
+    result = finish_spiral(r,angle_array[-2],w,dx,dy)
+    left1x.extend(result[0])
+    left1y.extend(result[1])
+    left2x.extend(result[2])
+    left2y.extend(result[3])
+    
+    right1x.extend(i*-1 for i in result[0])
+    right1y.extend(i*-1 for i in result[1])
+    right2x.extend(i*-1 for i in result[2])
+    right2y.extend(i*-1 for i in result[3])
+    #########################################
+    
+    #Step3 Organize all the points into a single matrix to be drawn in klayout.
+    spiral_x = []
+    spiral_y = []
+    
+    spiral_x.extend(reversed(left1x))
+    spiral_x.extend(right2x)
+    spiral_x.extend(reversed(right1x))
+    spiral_x.extend(left2x)
+    
+    spiral_y.extend(reversed(left1y))
+    spiral_y.extend(right2y)
+    spiral_y.extend(reversed(right1y))
+    spiral_y.extend(left2y)
+    
+    #makes Dpoints from the coordinates
+    dpts=[pya.DPoint(spiral_x[i], spiral_y[i]) for i in range(len(spiral_x))]
+    dpolygon = DPolygon(dpts)    
+    #dmult_pts = mult_pts(dpts,1)
+        
+    #dpoint polygon solution thanks to Jaspreet#
+    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    shapes(LayerSiN).insert(element)
+    
+    #Step4 Draw slab spiral
+    #Step2 Find the Coordinates of the gratings via the angles
+    #Wall1 of the Left    
+    left_xS = []
+    left_yS = []
+    #Wall2 of the Left
+    left2_xS = []
+    left2_yS = []
+    
+    #Calculate the Spiral Coordinates
+    for coord in spiral_gen(r,angle_array,sw,0,grating_length):
+    #for coord in spiral_gen_legacy(r,angle_array,sw):
+        left_xS.append(coord[0])
+        left_yS.append(coord[1])
+        left2_xS.append(coord[2])
+        left2_yS.append(coord[3])
+        
+    #Flip coords for right side coords
+    right_xS = [i*-1 for i in left_xS]
+    right_yS = [i*-1 for i in left_yS]    
+    right2_xS = [i*-1 for i in left2_xS]
+    right2_yS = [i*-1 for i in left2_yS]
+    #Obtain a sorted list of the coordinates of one wall.
+    
+    #Delete the first two points as they over lap
+    del right_xS[0]#calls the same index here because once you remove 0, 1 becomes 0, and so on and so forth
+    del right_xS[0]
+    del right_yS[0]
+    del right_yS[0]
+    
+    del right2_xS[0]
+    del right2_xS[0]
+    del right2_yS[0]
+    del right2_yS[0]
+    
+    #UNIFORM SECTION
+    del left_xS[-1]
+    del left_yS[-1]
+    del left2_xS[-1]
+    del left2_yS[-1]
+    
+    del right_xS[-1]
+    del right_yS[-1]
+    del right2_xS[-1]
+    del right2_yS[-1]
+     
+    result = finish_spiral(r,angle_array[-1],sw,1,1)
+    left_xS.extend(result[0])
+    left_yS.extend(result[1])
+    left2_xS.extend(result[2])
+    left2_yS.extend(result[3])
+    
+    right_xS.extend(i*-1 for i in result[0])
+    right_yS.extend(i*-1 for i in result[1])
+    right2_xS.extend(i*-1 for i in result[2])
+    right2_yS.extend(i*-1 for i in result[3])
+    #########################################
+    
+    #Step4.5 Organize all the points into a single matrix to be drawn in klayout.
+    slab_x = []
+    slab_y = []
+    
+    slab_x.extend(reversed(left_xS))
+    slab_x.extend(right2_xS)
+    slab_x.extend(reversed(right_xS))
+    slab_x.extend(left2_xS)
+    
+    slab_y.extend(reversed(left_yS))
+    slab_y.extend(right2_yS)
+    slab_y.extend(reversed(right_yS))
+    slab_y.extend(left2_yS)
+    
+    #makes Dpoints from the coordinates
+    dptsS=[pya.DPoint(slab_x[i], slab_y[i]) for i in range(len(slab_x))]
+    dpolygonS = DPolygon(dptsS)    
+    #dmult_pts = mult_pts(dpts,1)
+        
+    #dpoint polygon solution thanks to Jaspreet#
+    elementS = Polygon.from_dpoly(dpolygonS*(1.0/dbu))
+    shapes(LayerSiN_Slab).insert(elementS)
+
+
+    #Step6 Pins!    
+    # Create the pins, as short paths:
+    pin_length = 200 # database units, = 0.2 microns
+    LendX = result[4]
+    RendX = -result[4]
+    isEven = result[5] #Left and Right sides swap depending on the circle drawn, this returns which side it should be on
+    
+    if isEven == True:
+      DeviceHeight = self.cell.bbox().height()*dbu
+      MOD = 1 #Based on the side, modifies certain values that are just scalar additions below
+    else:
+      DeviceHeight = -self.cell.bbox().height()*dbu
+      MOD = -1
+       
+    #waveguides, didnt use pathing because it has some rounding errors in terms of width   
+    dpts=[pya.DPoint(LendX+w, 0),pya.DPoint(LendX-w, 0),pya.DPoint(LendX-w, DeviceHeight/2),pya.DPoint(LendX+w, DeviceHeight/2 )]
+    dpolygon = DPolygon(dpts)
+    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    shapes(LayerSiN).insert(element)
+    
+    dpts=[pya.DPoint(RendX+w, 0),pya.DPoint(RendX-w, 0),pya.DPoint(RendX-w, -DeviceHeight/2),pya.DPoint(RendX+w, -DeviceHeight/2 )]
+    dpolygon = DPolygon(dpts)
+    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    shapes(LayerSiN).insert(element)  
+  
+
+    pin = pya.Path([Point((RendX)/dbu, -DeviceHeight/2/dbu-pin_length/2), Point((RendX)/dbu,-DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
+    shapes(LayerPinRecN).insert(pin)
+    t = Trans((RendX)/dbu, -DeviceHeight/2/dbu)
+    text = Text ("pin1", t)
+    shape = shapes(LayerPinRecN).insert(text)
+    shape.text_size = 0.4/dbu
+
+    pin = pya.Path([Point((LendX)/dbu, DeviceHeight/2/dbu-pin_length/2), Point((LendX)/dbu, DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
+    shapes(LayerPinRecN).insert(pin)
+    t = Trans((LendX)/dbu, DeviceHeight/2/dbu)
+    text = Text ("pin2", t)
+    shape = shapes(LayerPinRecN).insert(text)
+    shape.text_size = 0.4/dbu
+    
+    #Step7 Tapers, 10microns default
+    dpts=[pya.DPoint(LendX+sw, 0),pya.DPoint(LendX-sw, 0),pya.DPoint(LendX-w, MOD*10),pya.DPoint(LendX+w, MOD*10 )]
+    dpolygon = DPolygon(dpts)
+    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    shapes(LayerSiN_Slab).insert(element)
+    
+    dpts=[pya.DPoint(RendX+sw, 0),pya.DPoint(RendX-sw, 0),pya.DPoint(RendX-w, -MOD*10),pya.DPoint(RendX+w, -MOD*10 )]
+    dpolygon = DPolygon(dpts)
+    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    shapes(LayerSiN_Slab).insert(element)
+    
+    # Create the device recognition layer
+    dev = Box(-self.cell.bbox().width()/2,-self.cell.bbox().height()/2+pin_length/2,self.cell.bbox().width()/2,self.cell.bbox().height()/2-pin_length/2)
+    shapes(LayerDevRecN).insert(dev)
+    
+    print("Done drawing the layout for - PCM Spiral with Slabs")
+
 class HalfSpiralBraggGrating(pya.PCellDeclarationHelper):
 
   def __init__(self):
@@ -647,8 +939,7 @@ class HalfSpiralBraggGrating(pya.PCellDeclarationHelper):
     self.param("w", self.TypeDouble, "Waveguide Width [nm]", default = 400)
     self.param("DeviceLength", self.TypeDouble, "Device Path Length [mm]", default = 0.5)
     self.param("Cwidth", self.TypeDouble, "Corrugation Width [nm]", default = 80)
-    self.param("period", self.TypeDouble, "period [nm]", default = 420 ) 
-    #self.param("textpolygon", self.TypeInt, "Draw text polygon label? 0/1", default = 1)
+    self.param("period", self.TypeDouble, "period [nm]", default = 420 )
     self.param("textl", self.TypeLayer, "Text Layer", default = LayerInfo(10, 0))
     self.param("pinrec", self.TypeLayer, "PinRec Layer", default = LayerInfo(69, 0))
     self.param("devrec", self.TypeLayer, "DevRec Layer", default = LayerInfo(68, 0))
@@ -717,37 +1008,27 @@ class HalfSpiralBraggGrating(pya.PCellDeclarationHelper):
     
     #Calculate the Spiral Coordinates
     for coord in spiral_gen(r,angle_array,w,cwidth,grating_length):
-        left_x_inc.append(coord[0])
-        left_y_inc.append(coord[1])
-        left_x_dec.append(coord[2])
-        left_y_dec.append(coord[3])
-        
-        left2_x_inc.append(coord[4])
-        left2_y_inc.append(coord[5])
-        left2_x_dec.append(coord[6])
-        left2_y_dec.append(coord[7])
-        
+      left_x_inc.append(coord[0])
+      left_y_inc.append(coord[1])
+      left_x_dec.append(coord[2])
+      left_y_dec.append(coord[3])
+      
+      left2_x_inc.append(coord[4])
+      left2_y_inc.append(coord[5])
+      left2_x_dec.append(coord[6])
+      left2_y_dec.append(coord[7])
+      
     for coord in spiral_gen(r,angle_array,w,0,grating_length):
       right_x_inc.append(coord[0])
       right_y_inc.append(coord[1])
       right_x_dec.append(coord[2])
       right_y_dec.append(coord[3])
-      
-      right2_x_inc.append(coord[4])
-      right2_y_inc.append(coord[5])
-      right2_x_dec.append(coord[6])
-      right2_y_dec.append(coord[7])
     
     #Flip coords for right side coords
     right_x_inc = [i*-1 for i in right_x_inc]
     right_y_inc = [i*-1 for i in right_y_inc]
     right_x_dec = [i*-1 for i in right_x_dec]
     right_y_dec = [i*-1 for i in right_y_dec]
-    
-    right2_x_inc = [i*-1 for i in right2_x_inc]
-    right2_y_inc = [i*-1 for i in right2_y_inc]
-    right2_x_dec = [i*-1 for i in right2_x_dec]
-    right2_y_dec = [i*-1 for i in right2_y_dec]
     
     #Obtain a sorted list of the coordinates of one wall.
     #repeat for the rest
@@ -758,20 +1039,17 @@ class HalfSpiralBraggGrating(pya.PCellDeclarationHelper):
     left2x = result[0]
     left2y = result[1]
     
-    result = sort_coord(True,right_x_inc,right_y_inc,right_x_dec,right_y_dec)
-    right1x = result[0]
-    right1y = result[1]
-    result = sort_coord(False,right2_x_inc,right2_y_inc,right2_x_dec,right2_y_dec)
-    right2x = result[0]
-    right2y = result[1]
+    #result = sort_coord(True,right_x_inc,right_y_inc,right_x_dec,right_y_dec)
+    right1x = right_x_inc
+    right1y = right_y_inc
+    right2x = right_x_dec
+    right2y = right_y_dec
     
     #Delete the first two points as they over lap
     del left1x[0]
     del left1y[0]
     del left2x[0]
     del left2y[0]
-    del right2x[0]
-    del right2y[0]
     
     #UNIFORM SECTION
     del left1x[-1]
@@ -813,43 +1091,48 @@ class HalfSpiralBraggGrating(pya.PCellDeclarationHelper):
     #makes Dpoints from the coordinates
     dpts=[pya.DPoint(spiral_x[i], spiral_y[i]) for i in range(len(spiral_x))]
     dpolygon = DPolygon(dpts)    
-    #dmult_pts = mult_pts(dpts,1)
         
     #dpoint polygon solution thanks to Jaspreet#
     element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
     shapes(LayerSiN).insert(element)
-    #shapes(LayerSiN).insert(Polygon.from_dpoly(dpolygon))
         
     # Create the pins, as short paths:
     pin_length = 200 # database units, = 0.2 microns
+    DeviceHeight = self.cell.bbox().height()*dbu
     LendX = result[4]
-    LendY = result[5]
     RendX = -result[4]
-    RendY = -result[5]
+    isEven = result[5] #Left and Right sides swap depending on the circle drawn, this returns which side it should be on
+    MOD = 1 #Based on the side, modifies certain values that are just scalar additions below
     
-    pin = pya.Path([Point(RendX/dbu, RendY/dbu-pin_length/2), Point(RendX/dbu, RendY/dbu+pin_length/2)], w/dbu*2)
+    if isEven == True:
+      DeviceHeight *= -1
+      MOD = -1
+       
+    #Draw waveguides to the boundary of the box
+    points_wg1 = [[0,0],[0,-DeviceHeight/2]] 
+    layout_waveguide_rel(self.cell, LayerSi, [RendX,0], points_wg1, w*2, 15)    
+    points_wg2 = [[0,0],[0,DeviceHeight/2]]
+    layout_waveguide_rel(self.cell, LayerSi, [LendX,0], points_wg2, w*2, 15)     
+  
+
+    pin = pya.Path([Point((RendX)/dbu, -DeviceHeight/2/dbu-pin_length/2), Point((RendX)/dbu,-DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
     shapes(LayerPinRecN).insert(pin)
-    t = Trans(RendX/dbu, RendY/dbu)
+    t = Trans((RendX)/dbu, -DeviceHeight/2/dbu)
     text = Text ("pin1", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
 
-    pin = pya.Path([Point(LendX/dbu, LendY/dbu-pin_length/2), Point(LendX/dbu, LendY/dbu+pin_length/2)], w/dbu*2)
+    pin = pya.Path([Point((LendX)/dbu, DeviceHeight/2/dbu-pin_length/2), Point((LendX)/dbu, DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
     shapes(LayerPinRecN).insert(pin)
-    t = Trans(LendX/dbu, LendY/dbu)
+    t = Trans((LendX)/dbu, DeviceHeight/2/dbu)
     text = Text ("pin2", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
-      
+    
     # Create the device recognition layer
-    dev = Box(LendX, 0, RendX, RendY*2 )
+    dev = Box((LendX)/dbu+w*MOD/dbu, -DeviceHeight/2/dbu, (RendX)/dbu-w*MOD/dbu, DeviceHeight/2/dbu )
     shapes(LayerDevRecN).insert(dev)
-    
-    
-    # Add a polygon text description
-    #if self.textpolygon:
-      #layout_pgtext(self.cell, self.textl, -5, 0, "PCM Spiral width:%.2f period:%.2f cwidth:%.2f L:%.2f]" % ( self.w, self.pitch,self.Cwidth,self.DeviceLength), 1)
-   
+
     print("Done drawing the layout for - PCM Half-Spiral")
     
 class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
@@ -864,8 +1147,7 @@ class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
     self.param("w", self.TypeDouble, "Waveguide Width [nm]", default = 400)
     self.param("DeviceLength", self.TypeDouble, "Device Path Length [mm]", default = 0.5)
     self.param("Cwidth", self.TypeDouble, "Corrugation Width [nm]", default = 80)
-    self.param("period", self.TypeDouble, "period [nm]", default = 420 ) 
-    #self.param("textpolygon", self.TypeInt, "Draw text polygon label? 0/1", default = 1)
+    self.param("period", self.TypeDouble, "period [nm]", default = 420 )
     self.param("textl", self.TypeLayer, "Text Layer", default = LayerInfo(10, 0))
     self.param("pinrec", self.TypeLayer, "PinRec Layer", default = LayerInfo(69, 0))
     self.param("devrec", self.TypeLayer, "DevRec Layer", default = LayerInfo(68, 0))
@@ -879,14 +1161,6 @@ class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
   
   def produce_impl(self):
     # This is the main part of the implementation: create the layout
-    
-    # fetch the parameters
-    #self.w = 400
-    #self.Length = 0.5
-    #self.Cwidth = 80
-    #self.pitch = 420
-    #self.Chirp_Rate = 0
-    #self.n = 1800
     
     ly = self.layout
     shapes = self.cell.shapes
@@ -1040,281 +1314,6 @@ class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
         
     # Create the pins, as short paths:
     pin_length = 200 # database units, = 0.2 microns
-    LendX = result[4]
-    LendY = result[5]
-    RendX = -result[4]
-    RendY = -result[5]
-    
-    pin = pya.Path([Point(RendX/dbu, RendY/dbu-pin_length/2), Point(RendX/dbu, RendY/dbu+pin_length/2)], w/dbu*2)
-    shapes(LayerPinRecN).insert(pin)
-    t = Trans(RendX/dbu, RendY/dbu)
-    text = Text ("pin1", t)
-    shape = shapes(LayerPinRecN).insert(text)
-    shape.text_size = 0.4/dbu
-
-    pin = pya.Path([Point(LendX/dbu, LendY/dbu-pin_length/2), Point(LendX/dbu, LendY/dbu+pin_length/2)], w/dbu*2)
-    shapes(LayerPinRecN).insert(pin)
-    t = Trans(LendX/dbu, LendY/dbu)
-    text = Text ("pin2", t)
-    shape = shapes(LayerPinRecN).insert(text)
-    shape.text_size = 0.4/dbu
-      
-    # Create the device recognition layer
-    dev = Box(LendX, 0, RendX, RendY*2 )
-    shapes(LayerDevRecN).insert(dev)
-    
-    
-    # Add a polygon text description
-    #if self.textpolygon:
-      #layout_pgtext(self.cell, self.textl, -5, 0, "PCM Spiral width:%.2f period:%.2f cwidth:%.2f L:%.2f]" % ( self.w, self.pitch,self.Cwidth,self.DeviceLength), 1)
-   
-    print("Done drawing the layout for - Singlewall Spiral")    
-
-class PCMSpiralBraggGratingSlab(pya.PCellDeclarationHelper):
-
-  def __init__(self):
-
-    # Important: initialize the super class
-    super(PCMSpiralBraggGratingSlab, self).__init__()
-
-    # declare the parameters
-    self.param("silayer", self.TypeLayer, "Si Layer", default = LayerInfo(1, 0))
-    self.param("w", self.TypeDouble, "Waveguide Width [nm]", default = 400)
-    self.param("DeviceLength", self.TypeDouble, "Device Path Length [mm]", default = 0.5)
-    self.param("Cwidth", self.TypeDouble, "Corrugation Width [nm]", default = 80)
-    self.param("period", self.TypeDouble, "period [nm]", default = 420 ) 
-    self.param("silayer2", self.TypeLayer, "Slab Si Layer", default = LayerInfo(31, 0))
-    self.param("sw", self.TypeDouble, "Slab Width [nm]", default = 500 )
-    self.param("textl", self.TypeLayer, "Text Layer", default = LayerInfo(10, 0))
-    self.param("pinrec", self.TypeLayer, "PinRec Layer", default = LayerInfo(69, 0))
-    self.param("devrec", self.TypeLayer, "DevRec Layer", default = LayerInfo(68, 0))
-    
-  def display_text_impl(self):
-    # Provide a descriptive text for the cell
-    return "SpiralBraggGratingSlab"
-
-  def can_create_from_shape_impl(self):
-    return False   
-  
-  def produce_impl(self):
-    
-    ly = self.layout
-    shapes = self.cell.shapes
-
-    LayerSi = self.silayer
-    LayerSiN = ly.layer(LayerSi)
-    TextLayerN = ly.layer(self.textl)
-    LayerPinRecN = ly.layer(self.pinrec)
-    LayerDevRecN = ly.layer(self.devrec)
-    TextLayerN = ly.layer(self.textl)
-    LayerSiN_Slab = ly.layer(self.silayer2)
-    
-    w = self.w*10**-3/2.0 #drawing from center line, only have to add half
-    length = self.DeviceLength*1000/2.0#only drawing half and then copying
-    cwidth = self.Cwidth*10**-3/2.0 #same reason as width
-    grating_length = self.period/2.0*10**-3
-    sw = self.sw*10**-3/2.0 #drawing from center line, only have to add half
-     
-     
-    #Step1 Find the Angles of each grating#######    
-    angle_array=[]
-    for theta in angle_from_corrugation(r,length,grating_length):
-        angle_array.append(theta)
-    ####################
-    
-    #####################
-    #Step2 Find the Coordinates of the gratings via the angles
-    #Wall1 of the Left    
-    left_x_inc = []
-    left_y_inc = []
-    left_x_dec = []
-    left_y_dec = []
-    #Wall2 of the Left
-    left2_x_inc = []
-    left2_y_inc = []
-    left2_x_dec = []
-    left2_y_dec = []
-    
-    #Calculate the Spiral Coordinates
-    for coord in spiral_gen(r,angle_array,w,cwidth,grating_length):
-        left_x_inc.append(coord[0])
-        left_y_inc.append(coord[1])
-        left_x_dec.append(coord[2])
-        left_y_dec.append(coord[3])
-        
-        left2_x_inc.append(coord[4])
-        left2_y_inc.append(coord[5])
-        left2_x_dec.append(coord[6])
-        left2_y_dec.append(coord[7])
-    
-    #Flip coords for right side coords
-    right_x_inc = [i*-1 for i in left_x_inc]
-    right_y_inc = [i*-1 for i in left_y_inc]
-    right_x_dec = [i*-1 for i in left_x_dec]
-    right_y_dec = [i*-1 for i in left_y_dec]
-    
-    right2_x_inc = [i*-1 for i in left2_x_inc]
-    right2_y_inc = [i*-1 for i in left2_y_inc]
-    right2_x_dec = [i*-1 for i in left2_x_dec]
-    right2_y_dec = [i*-1 for i in left2_y_dec]
-    #Obtain a sorted list of the coordinates of one wall.
-    #repeat for the rest
-    result = sort_coord(True,left_x_inc,left_y_inc,left_x_dec,left_y_dec)
-    left1x = result[0]
-    left1y = result[1]
-    result = sort_coord(False,left2_x_inc,left2_y_inc,left2_x_dec,left2_y_dec)
-    left2x = result[0]
-    left2y = result[1]
-    
-    result = sort_coord(False,right_x_inc,right_y_inc,right_x_dec,right_y_dec)
-    right1x = result[0]
-    right1y = result[1]
-    #Delete the first two points as they over lap
-    del right1x[0]#calls the same index here because once you remove 0, 1 becomes 0, and so on and so forth
-    del right1x[0]
-    del right1y[0]
-    del right1y[0]
-    
-    result = sort_coord(True,right2_x_inc,right2_y_inc,right2_x_dec,right2_y_dec)
-    right2x = result[0]
-    right2y = result[1]
-    del right2x[0]
-    del right2x[0]
-    del right2y[0]
-    del right2y[0]
-    
-    #UNIFORM SECTION
-    del left1x[-1]
-    del left1y[-1]
-    del left2x[-1]
-    del left2y[-1]
-    
-    del right1x[-1]
-    del right1y[-1]
-    del right2x[-1]
-    del right2y[-1]
-     
-    result = finish_spiral(r,angle_array[-1],w)
-    left1x.extend(result[0])
-    left1y.extend(result[1])
-    left2x.extend(result[2])
-    left2y.extend(result[3])
-    
-    right1x.extend(i*-1 for i in result[0])
-    right1y.extend(i*-1 for i in result[1])
-    right2x.extend(i*-1 for i in result[2])
-    right2y.extend(i*-1 for i in result[3])
-    #########################################
-    
-    #Step3 Organize all the points into a single matrix to be drawn in klayout.
-    spiral_x = []
-    spiral_y = []
-    
-    spiral_x.extend(reversed(left1x))
-    spiral_x.extend(right2x)
-    spiral_x.extend(reversed(right1x))
-    spiral_x.extend(left2x)
-    
-    spiral_y.extend(reversed(left1y))
-    spiral_y.extend(right2y)
-    spiral_y.extend(reversed(right1y))
-    spiral_y.extend(left2y)
-    
-    #makes Dpoints from the coordinates
-    dpts=[pya.DPoint(spiral_x[i], spiral_y[i]) for i in range(len(spiral_x))]
-    dpolygon = DPolygon(dpts)    
-    #dmult_pts = mult_pts(dpts,1)
-        
-    #dpoint polygon solution thanks to Jaspreet#
-    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN).insert(element)
-    #shapes(LayerSiN).insert(Polygon.from_dpoly(dpolygon))
-    
-    #Step4 Draw slab spiral
-    #Step2 Find the Coordinates of the gratings via the angles
-    #Wall1 of the Left    
-    left_xS = []
-    left_yS = []
-    #Wall2 of the Left
-    left2_xS = []
-    left2_yS = []
-    
-    #Calculate the Spiral Coordinates
-    for coord in spiral_gen(r,angle_array,sw,0,grating_length):
-    #for coord in spiral_gen_legacy(r,angle_array,sw):
-        left_xS.append(coord[0])
-        left_yS.append(coord[1])
-        left2_xS.append(coord[2])
-        left2_yS.append(coord[3])
-        
-    #Flip coords for right side coords
-    right_xS = [i*-1 for i in left_xS]
-    right_yS = [i*-1 for i in left_yS]    
-    right2_xS = [i*-1 for i in left2_xS]
-    right2_yS = [i*-1 for i in left2_yS]
-    #Obtain a sorted list of the coordinates of one wall.
-    
-    #Delete the first two points as they over lap
-    del right_xS[0]#calls the same index here because once you remove 0, 1 becomes 0, and so on and so forth
-    del right_xS[0]
-    del right_yS[0]
-    del right_yS[0]
-    
-    del right2_xS[0]
-    del right2_xS[0]
-    del right2_yS[0]
-    del right2_yS[0]
-    
-    #UNIFORM SECTION
-    del left_xS[-1]
-    del left_yS[-1]
-    del left2_xS[-1]
-    del left2_yS[-1]
-    
-    del right_xS[-1]
-    del right_yS[-1]
-    del right2_xS[-1]
-    del right2_yS[-1]
-     
-    result = finish_spiral(r,angle_array[-1],sw)
-    left_xS.extend(result[0])
-    left_yS.extend(result[1])
-    left2_xS.extend(result[2])
-    left2_yS.extend(result[3])
-    
-    right_xS.extend(i*-1 for i in result[0])
-    right_yS.extend(i*-1 for i in result[1])
-    right2_xS.extend(i*-1 for i in result[2])
-    right2_yS.extend(i*-1 for i in result[3])
-    #########################################
-    
-    #Step4.5 Organize all the points into a single matrix to be drawn in klayout.
-    slab_x = []
-    slab_y = []
-    
-    slab_x.extend(reversed(left_xS))
-    slab_x.extend(right2_xS)
-    slab_x.extend(reversed(right_xS))
-    slab_x.extend(left2_xS)
-    
-    slab_y.extend(reversed(left_yS))
-    slab_y.extend(right2_yS)
-    slab_y.extend(reversed(right_yS))
-    slab_y.extend(left2_yS)
-    
-    #makes Dpoints from the coordinates
-    dptsS=[pya.DPoint(slab_x[i], slab_y[i]) for i in range(len(slab_x))]
-    dpolygonS = DPolygon(dptsS)    
-    #dmult_pts = mult_pts(dpts,1)
-        
-    #dpoint polygon solution thanks to Jaspreet#
-    elementS = Polygon.from_dpoly(dpolygonS*(1.0/dbu))
-    shapes(LayerSiN_Slab).insert(elementS)
-
-
-    #Step6 Pins!    
-    # Create the pins, as short paths:
-    pin_length = 200 # database units, = 0.2 microns
     DeviceHeight = self.cell.bbox().height()*dbu
     LendX = result[4]
     RendX = -result[4]
@@ -1324,7 +1323,6 @@ class PCMSpiralBraggGratingSlab(pya.PCellDeclarationHelper):
     if isEven == True:
       DeviceHeight *= -1
       MOD = -1
-
        
     #Draw waveguides to the boundary of the box
     points_wg1 = [[0,0],[0,-DeviceHeight/2]] 
@@ -1346,23 +1344,12 @@ class PCMSpiralBraggGratingSlab(pya.PCellDeclarationHelper):
     text = Text ("pin2", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
-
-    #Step7 Tapers, 10microns default
-    dpts=[pya.DPoint(LendX+sw, 0),pya.DPoint(LendX-sw, 0),pya.DPoint(LendX-w, MOD*10),pya.DPoint(LendX+w, MOD*10 )]
-    dpolygon = DPolygon(dpts)
-    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN_Slab).insert(element)
-    
-    dpts=[pya.DPoint(RendX+sw, 0),pya.DPoint(RendX-sw, 0),pya.DPoint(RendX-w, -MOD*10),pya.DPoint(RendX+w, -MOD*10 )]
-    dpolygon = DPolygon(dpts)
-    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN_Slab).insert(element)
     
     # Create the device recognition layer
-    dev = Box((LendX)/dbu+sw*MOD/dbu, -DeviceHeight/2/dbu, (RendX)/dbu-sw*MOD/dbu, DeviceHeight/2/dbu )
+    dev = Box((LendX)/dbu+w*MOD/dbu, -DeviceHeight/2/dbu, (RendX)/dbu-w*MOD/dbu, DeviceHeight/2/dbu )
     shapes(LayerDevRecN).insert(dev)
-                
-    print("Done drawing the layout for - PCM Spiral with Slabs")
+      
+    print("Done drawing the layout for - Singlewall Spiral")    
 
 
 class SiEPIC(pya.Library):
