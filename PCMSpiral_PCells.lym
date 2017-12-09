@@ -150,182 +150,7 @@ def spiral_gen(r,angle_array,w,cwidth,grating_length):
         yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc2,ycoor_Winc2,xcoor_Winc3,ycoor_Winc3,xcoor_Winc4,ycoor_Winc4,dx,dy
       else:
         yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc3,ycoor_Winc3,dx,dy
-    
-def spiral_gen_singlewall_outer(r,angle_array,w,cwidth,grating_length):
-    #This generates the spirals coordinates from the given angle arrays.        
-    for i in frange(0,len(angle_array)-1,1):
-      angle=angle_array[i]
-      angle_next=angle_array[i+1]
-      
-      #Calculate Slope to ensure the gratings are 90 degree with the center guide line, note that the final point will be ignored here and appeneded later
-      deltaX = (r*sign(angle_next))*cmath.exp(-abs(angle_next)/alpha) #r, not r_inc here because then it will all end at 0,0     
-      #Second Point
-      r_spiral = (r*sign(angle_next))+(gap*angle_next/pi)
-      S = (r_spiral*cmath.exp(j*abs(angle_next)))-deltaX    
-      x2 = S.real
-      y2 = S.imag
-      deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0     
-      #First Point
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
-      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX 
-      x1 = S.real
-      y1 = S.imag 
-      #Slope
-      if (grating_length != 0):
-        dx = (x2-x1)/grating_length
-        dy = (y2-y1)/grating_length
-      else:
-        print ("Grating_Length is 0, use other function")
-
-      #Calculate the Coordinate for each grating and apply the slope modifer
-      deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0     
-      #Outer, C1
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
-      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX    
-      xcoor_Winc1 = S.real+dy*(w)
-      ycoor_Winc1 = S.imag-dx*(w)               
-      xcoor_Winc2 = xcoor_Winc1
-      ycoor_Winc2 = ycoor_Winc1
-      
-      #Inner, C1
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
-      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-      xcoor_Winc3 = S.real-dy*(w-cwidth)
-      ycoor_Winc3 = S.imag+dx*(w-cwidth)
-      #Inner C2
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
-      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-      xcoor_Winc4 = S.real-dy*(w+cwidth)
-      ycoor_Winc4 = S.imag+dx*(w+cwidth)
-      yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc2,ycoor_Winc2,xcoor_Winc3,ycoor_Winc3,xcoor_Winc4,ycoor_Winc4
-    
-    #for the final point, uses the final angle and appends it as the original equation would've (refer to legacy version)
-    #this is because the forced perpendicular would cause some polygonal issues that isnt worth the fix
-    #plus at the outer radius, the final grating is pretty much perpendicular anyways.
-    angle = angle_array[-1]  
-    deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0     
-    #Outer, C1
-    r_spiral = ((r+w+cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX    
-    xcoor_Winc1 = S.real
-    ycoor_Winc1 = S.imag    
-    #Outer C2
-    r_spiral = ((r+w-cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-    xcoor_Winc2 = S.real
-    ycoor_Winc2 = S.imag
-    #Inner, C1
-    r_spiral = ((r-w+cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-    xcoor_Winc3 = S.real
-    ycoor_Winc3 = S.imag
-    #Inner C2
-    r_spiral = ((r-w-cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-    xcoor_Winc4 = S.real
-    ycoor_Winc4 = S.imag
-    yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc2,ycoor_Winc2,xcoor_Winc3,ycoor_Winc3,xcoor_Winc4,ycoor_Winc4
-        
-def spiral_gen_singlewall_inner(r,angle_array,w,cwidth,grating_length):
-    #This generates the spirals coordinates from the given angle arrays.        
-    for i in frange(0,len(angle_array)-1,1):
-      angle=angle_array[i]
-      angle_next=angle_array[i+1]
-      
-      #Calculate Slope to ensure the gratings are 90 degree with the center guide line, note that the final point will be ignored here and appeneded later
-      deltaX = (r*sign(angle_next))*cmath.exp(-abs(angle_next)/alpha) #r, not r_inc here because then it will all end at 0,0     
-      #Second Point
-      r_spiral = (r*sign(angle_next))+(gap*angle_next/pi)
-      S = (r_spiral*cmath.exp(j*abs(angle_next)))-deltaX    
-      x2 = S.real
-      y2 = S.imag
-      deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0     
-      #First Point
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
-      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX 
-      x1 = S.real
-      y1 = S.imag 
-      #Slope
-      if (grating_length != 0):
-        dx = (x2-x1)/grating_length
-        dy = (y2-y1)/grating_length
-      else:
-        print ("Grating_Length is 0, use other function")
-
-      #Calculate the Coordinate for each grating and apply the slope modifer
-      deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0     
-      #Outer, C1
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
-      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX    
-      xcoor_Winc1 = S.real+dy*(w+cwidth)
-      ycoor_Winc1 = S.imag-dx*(w+cwidth)
-      
-      #Outer C2
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
-      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-      xcoor_Winc2 = S.real+dy*(w-cwidth)
-      ycoor_Winc2 = S.imag-dx*(w-cwidth)
-      #Inner, C1
-      r_spiral = (r*sign(angle))+(gap*angle/pi)
-      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-      xcoor_Winc3 = S.real-dy*(w)
-      ycoor_Winc3 = S.imag+dx*(w)               
-      xcoor_Winc4 = xcoor_Winc3
-      ycoor_Winc4 = ycoor_Winc3
-      yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc2,ycoor_Winc2,xcoor_Winc3,ycoor_Winc3,xcoor_Winc4,ycoor_Winc4
-    
-    #for the final point, uses the final angle and appends it as the original equation would've (refer to legacy version)
-    #this is because the forced perpendicular would cause some polygonal issues that isnt worth the fix
-    #plus at the outer radius, the final grating is pretty much perpendicular anyways.
-    angle = angle_array[-1]  
-    deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0     
-    #Outer, C1
-    r_spiral = ((r+w+cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX    
-    xcoor_Winc1 = S.real
-    ycoor_Winc1 = S.imag    
-    #Outer C2
-    r_spiral = ((r+w-cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-    xcoor_Winc2 = S.real
-    ycoor_Winc2 = S.imag
-    #Inner, C1
-    r_spiral = ((r-w+cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-    xcoor_Winc3 = S.real
-    ycoor_Winc3 = S.imag
-    #Inner C2
-    r_spiral = ((r-w-cwidth)*sign(angle))+(gap*angle/pi)
-    S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-    xcoor_Winc4 = S.real
-    ycoor_Winc4 = S.imag
-    yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc2,ycoor_Winc2,xcoor_Winc3,ycoor_Winc3,xcoor_Winc4,ycoor_Winc4
-            
-def spiral_gen_legacy(r,angle_array,w):
-    #This was the original function described in the paper. I cannot guarentee the center portion will have consistent waveguide widths if combined with the other spiral functions above.
-    
-    #The radius of the individual walls, basically draws 2 lines for each wall of the waveguide and appends hte points
-    r_Winc = r+w
-    r_Wdec = r-w
-        
-    for angle in angle_array: #finds the points corresponding to the grating lengths we want based on center line
-        deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0
-        #deltaY = (r*sign(angle))*cmath.exp(j*abs(angle)/alpha)  
-        
-        #Outer, C1
-        r_spiral = (r_Winc*sign(angle))+(gap*angle/pi)
-        S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX    
-        xcoor_Winc1 = S.real
-        ycoor_Winc1 = S.imag
-        
-        #Inner, C1
-        r_spiral = (r_Wdec*sign(angle))+(gap*angle/pi)
-        S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
-        xcoor_Winc3 = S.real
-        ycoor_Winc3 = S.imag
-                
-        yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc3,ycoor_Winc3            
- 
+                        
     
 def sort_coord(bool_order,xinc,yinc,xdec,ydec):
     #this organizes the two sets of coordinates for each wall into an order to create gratings
@@ -415,6 +240,136 @@ def finish_spiral(r,finalangle,w,dx,dy):
     
     return x_inc,y_inc,x_dec,y_dec,endx,isEven
     
+def spiral_gen_NoCenter(r,angle_array,w,cwidth,grating_length):
+    #This generates the spirals coordinates from the given angle arrays. Given there is a cwidth
+    #for i in frange(0,len(angle_array)-1,1):
+    i = 0
+    angle = 0
+    xc1 = []
+    xc2 = []
+    yc1 = []
+    yc2 = []
+
+    while (angle&lt;pi):
+      angle=angle_array[i]
+      angle_next=angle_array[i+1]
+      
+      #Calculate Slope to ensure the gratings are 90 degree with the center guide line, note that the final point will be ignored here and appeneded later
+      deltaX = (r*sign(angle_next))*cmath.exp(-abs(angle_next)/alpha) #r, not r_inc here because then it will all end at 0,0     
+      #Second Point
+      r_spiral = (r*sign(angle_next))+(gap*angle_next/pi)
+      S = (r_spiral*cmath.exp(j*abs(angle_next)))-deltaX    
+      x2 = S.real
+      y2 = S.imag
+      deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0     
+      #First Point
+      r_spiral = (r*sign(angle))+(gap*angle/pi)
+      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX 
+      x1 = S.real
+      y1 = S.imag 
+      #Slope
+      if (grating_length != 0):
+        dx = (x2-x1)/grating_length
+        dy = (y2-y1)/grating_length
+      else:
+        print ("Grating_Length is 0, use legacy function")
+      #Calculate the Coordinate for each grating and apply the slope modifer  
+      #Outer, C1
+      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX    
+      xc1.append(S.real+dy*(w))
+      yc1.append(S.imag-dx*(w))
+      #Inner, C1
+      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
+      xc2.append(S.real-dy*(w))
+      yc2.append(S.imag+dx*(w))
+      i+=1
+      
+    return xc1,yc1,xc2,yc2,i
+    
+def spiral_gen_NoCenter_Gratings(r,angle_array,w,cwidth,grating_length,lasti):
+    #This generates the spirals coordinates from the given angle arrays. Given there is a cwidth
+    
+    for i in frange(lasti,len(angle_array)-1,1):
+      angle=angle_array[i]
+      angle_next=angle_array[i+1]
+      
+      #Calculate Slope to ensure the gratings are 90 degree with the center guide line, note that the final point will be ignored here and appeneded later
+      deltaX = (r*sign(angle_next))*cmath.exp(-abs(angle_next)/alpha) #r, not r_inc here because then it will all end at 0,0     
+      #Second Point
+      r_spiral = (r*sign(angle_next))+(gap*angle_next/pi)
+      S = (r_spiral*cmath.exp(j*abs(angle_next)))-deltaX    
+      x2 = S.real
+      y2 = S.imag
+      deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha) #r, not r_inc here because then it will all end at 0,0     
+      #First Point
+      r_spiral = (r*sign(angle))+(gap*angle/pi)
+      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX 
+      x1 = S.real
+      y1 = S.imag 
+      #Slope
+      if (grating_length != 0):
+        dx = (x2-x1)/grating_length
+        dy = (y2-y1)/grating_length
+      else:
+        print ("Grating_Length is 0, use legacy function")
+
+      #Calculate the Coordinate for each grating and apply the slope modifer  
+      #Outer, C1
+      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX    
+      xcoor_Winc1 = S.real+dy*(w+cwidth)
+      ycoor_Winc1 = S.imag-dx*(w+cwidth)     
+      #Outer C2
+      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
+      xcoor_Winc2 = S.real+dy*(w-cwidth)
+      ycoor_Winc2 = S.imag-dx*(w-cwidth)
+      #Inner, C1
+      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
+      xcoor_Winc3 = S.real-dy*(w-cwidth)
+      ycoor_Winc3 = S.imag+dx*(w-cwidth)
+      #Inner C2
+
+      S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX                 
+      xcoor_Winc4 = S.real-dy*(w+cwidth)
+      ycoor_Winc4 = S.imag+dx*(w+cwidth)
+      
+      if cwidth!=0:  
+        yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc2,ycoor_Winc2,xcoor_Winc3,ycoor_Winc3,xcoor_Winc4,ycoor_Winc4,dx,dy
+      else:
+        yield xcoor_Winc1,ycoor_Winc1,xcoor_Winc3,ycoor_Winc3,dx,dy  
+        
+def angle_from_corrugation_NoCenter(r, length, grating_length):
+    #Calculates the thetas at which the desired grating lengths are achieved. Outputs to an array    
+    angle = 0
+    current_length = 0
+    x1=0
+    y1=0
+    current_total_length=0
+    
+    ##
+    length *= 2 #length needs to be double since all gratings on one side
+    ##
+    
+    yield angle#yield acts as a return but gives a generator. This early yield is to return the 0 value
+    
+    while current_total_length &lt; length+grating_length: #The spiral gen doesnt draw the last grating because it needs to calculate slope, thus we draw an extra
+        while current_length &lt; grating_length: #if the length has no reached the grating length, continue
+            deltaX = (r*sign(angle))*cmath.exp(-abs(angle)/alpha)    
+            r_spiral = (r*sign(angle))+(gap*angle/pi)
+            S = (r_spiral*cmath.exp(j*abs(angle)))-deltaX
+            x2 = S.real
+            y2= S.imag
+            
+            angle += angle_stepsize #continue to increase step size
+            current_length = math.sqrt((x2-x1)**2+(y2-y1)**2) #figureout of the distance betweenthe two points
+        #print("currentLength"+str(current_length))
+        #print("targetlength"+str(grating_length))
+        yield angle
+        x1=S.real
+        y1=S.imag
+        if angle &gt; pi:
+          current_total_length +=current_length
+        current_length=0
+                
 ###########################
 
 class PCMSpiralBraggGrating(pya.PCellDeclarationHelper):
@@ -926,235 +881,27 @@ class PCMSpiralBraggGratingSlab(pya.PCellDeclarationHelper):
     shapes(LayerDevRecN).insert(dev)
     
     print("Done drawing the layout for - PCM Spiral with Slabs")
-
-class HalfSpiralBraggGrating(pya.PCellDeclarationHelper):
-
-  def __init__(self):
-
-    # Important: initialize the super class
-    super(HalfSpiralBraggGrating, self).__init__()
-
-    # declare the parameters
-    self.param("silayer", self.TypeLayer, "Si Layer", default = LayerInfo(1, 0))
-    self.param("w", self.TypeDouble, "Waveguide Width [nm]", default = 400)
-    self.param("DeviceLength", self.TypeDouble, "Device Path Length [mm]", default = 0.5)
-    self.param("Cwidth", self.TypeDouble, "Corrugation Width [nm]", default = 80)
-    self.param("period", self.TypeDouble, "period [nm]", default = 420 )
-    self.param("textl", self.TypeLayer, "Text Layer", default = LayerInfo(10, 0))
-    self.param("pinrec", self.TypeLayer, "PinRec Layer", default = LayerInfo(69, 0))
-    self.param("devrec", self.TypeLayer, "DevRec Layer", default = LayerInfo(68, 0))
-    
-  def display_text_impl(self):
-    # Provide a descriptive text for the cell
-    return "SpiralBraggGrating_HalfSpiral"
-
-  def can_create_from_shape_impl(self):
-    return False   
-  
-  def produce_impl(self):
-    # This is the main part of the implementation: create the layout
-    
-    # fetch the parameters
-    #self.w = 400
-    #self.Length = 0.5
-    #self.Cwidth = 80
-    #self.pitch = 420
-    #self.Chirp_Rate = 0
-    #self.n = 1800
-    
-    ly = self.layout
-    shapes = self.cell.shapes
-
-    LayerSi = self.silayer
-    LayerSiN = ly.layer(LayerSi)
-    TextLayerN = ly.layer(self.textl)
-    LayerPinRecN = ly.layer(self.pinrec)
-    LayerDevRecN = ly.layer(self.devrec)
-    TextLayerN = ly.layer(self.textl)
-    
-    w = self.w*10**-3/2.0 #drawing from center line, only have to add half
-    length = self.DeviceLength*1000/2.0#only drawing half and then copying
-    cwidth = self.Cwidth*10**-3/2.0 #same reason as width
-    grating_length = self.period/2.0*10**-3
-     
-    #Step1 Find the Angles of each grating#######    
-    angle_array=[]
-    for theta in angle_from_corrugation(r,length,grating_length):
-        angle_array.append(theta)
-    ####################
-    
-    #####################
-    #Step2 Find the Coordinates of the gratings via the angles
-    #Wall1 of the Left    
-    left_x_inc = []
-    left_y_inc = []
-    left_x_dec = []
-    left_y_dec = []
-    #Wall2 of the Left
-    left2_x_inc = []
-    left2_y_inc = []
-    left2_x_dec = []
-    left2_y_dec = []
-    #Wall1 of the right    
-    right_x_inc = []
-    right_y_inc = []
-    right_x_dec = []
-    right_y_dec = []
-    #Wall2 of the right
-    right2_x_inc = []
-    right2_y_inc = []
-    right2_x_dec = []
-    right2_y_dec = []
-    
-    #Calculate the Spiral Coordinates
-    for coord in spiral_gen(r,angle_array,w,cwidth,grating_length):
-      left_x_inc.append(coord[0])
-      left_y_inc.append(coord[1])
-      left_x_dec.append(coord[2])
-      left_y_dec.append(coord[3])
-      
-      left2_x_inc.append(coord[4])
-      left2_y_inc.append(coord[5])
-      left2_x_dec.append(coord[6])
-      left2_y_dec.append(coord[7])
-      
-    for coord in spiral_gen(r,angle_array,w,0,grating_length):
-      right_x_inc.append(coord[0])
-      right_y_inc.append(coord[1])
-      right_x_dec.append(coord[2])
-      right_y_dec.append(coord[3])
-    
-    #Flip coords for right side coords
-    right_x_inc = [i*-1 for i in right_x_inc]
-    right_y_inc = [i*-1 for i in right_y_inc]
-    right_x_dec = [i*-1 for i in right_x_dec]
-    right_y_dec = [i*-1 for i in right_y_dec]
-    
-    #Obtain a sorted list of the coordinates of one wall.
-    #repeat for the rest
-    result = sort_coord(True,left_x_inc,left_y_inc,left_x_dec,left_y_dec)
-    left1x = result[0]
-    left1y = result[1]
-    result = sort_coord(False,left2_x_inc,left2_y_inc,left2_x_dec,left2_y_dec)
-    left2x = result[0]
-    left2y = result[1]
-    
-    #result = sort_coord(True,right_x_inc,right_y_inc,right_x_dec,right_y_dec)
-    right1x = right_x_inc
-    right1y = right_y_inc
-    right2x = right_x_dec
-    right2y = right_y_dec
-    
-    #Delete the first two points as they over lap
-    del left1x[0]
-    del left1y[0]
-    del left2x[0]
-    del left2y[0]
-    
-    #UNIFORM SECTION
-    del left1x[-1]
-    del left1y[-1]
-    del left2x[-1]
-    del left2y[-1]
-    
-    del right1x[-1]
-    del right1y[-1]
-    del right2x[-1]
-    del right2y[-1]
-     
-    result = finish_spiral(r,angle_array[-1],w)
-    left1x.extend(result[0])
-    left1y.extend(result[1])
-    left2x.extend(result[2])
-    left2y.extend(result[3])
-    
-    right1x.extend(i*-1 for i in result[0])
-    right1y.extend(i*-1 for i in result[1])
-    right2x.extend(i*-1 for i in result[2])
-    right2y.extend(i*-1 for i in result[3])
-    #########################################
-    
-    #Step3 Organize all the points into a single matrix to be drawn in klayout.
-    spiral_x = []
-    spiral_y = []
-    
-    spiral_x.extend(reversed(left1x))
-    spiral_x.extend(right2x)
-    spiral_x.extend(reversed(right1x))
-    spiral_x.extend(left2x)
-    
-    spiral_y.extend(reversed(left1y))
-    spiral_y.extend(right2y)
-    spiral_y.extend(reversed(right1y))
-    spiral_y.extend(left2y)
-    
-    #makes Dpoints from the coordinates
-    dpts=[pya.DPoint(spiral_x[i], spiral_y[i]) for i in range(len(spiral_x))]
-    dpolygon = DPolygon(dpts)    
-        
-    #dpoint polygon solution thanks to Jaspreet#
-    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN).insert(element)
-        
-    # Create the pins, as short paths:
-    pin_length = 200 # database units, = 0.2 microns
-    DeviceHeight = self.cell.bbox().height()*dbu
-    LendX = result[4]
-    RendX = -result[4]
-    isEven = result[5] #Left and Right sides swap depending on the circle drawn, this returns which side it should be on
-    MOD = 1 #Based on the side, modifies certain values that are just scalar additions below
-    
-    if isEven == True:
-      DeviceHeight *= -1
-      MOD = -1
        
-    #Draw waveguides to the boundary of the box
-    points_wg1 = [[0,0],[0,-DeviceHeight/2]] 
-    layout_waveguide_rel(self.cell, LayerSi, [RendX,0], points_wg1, w*2, 15)    
-    points_wg2 = [[0,0],[0,DeviceHeight/2]]
-    layout_waveguide_rel(self.cell, LayerSi, [LendX,0], points_wg2, w*2, 15)     
-  
-
-    pin = pya.Path([Point((RendX)/dbu, -DeviceHeight/2/dbu-pin_length/2), Point((RendX)/dbu,-DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
-    shapes(LayerPinRecN).insert(pin)
-    t = Trans((RendX)/dbu, -DeviceHeight/2/dbu)
-    text = Text ("pin1", t)
-    shape = shapes(LayerPinRecN).insert(text)
-    shape.text_size = 0.4/dbu
-
-    pin = pya.Path([Point((LendX)/dbu, DeviceHeight/2/dbu-pin_length/2), Point((LendX)/dbu, DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
-    shapes(LayerPinRecN).insert(pin)
-    t = Trans((LendX)/dbu, DeviceHeight/2/dbu)
-    text = Text ("pin2", t)
-    shape = shapes(LayerPinRecN).insert(text)
-    shape.text_size = 0.4/dbu
-    
-    # Create the device recognition layer
-    dev = Box((LendX)/dbu+w*MOD/dbu, -DeviceHeight/2/dbu, (RendX)/dbu-w*MOD/dbu, DeviceHeight/2/dbu )
-    shapes(LayerDevRecN).insert(dev)
-
-    print("Done drawing the layout for - PCM Half-Spiral")
-    
-class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
+class Spiral_NoCenterBraggGrating(pya.PCellDeclarationHelper):
 
   def __init__(self):
 
     # Important: initialize the super class
-    super(BraggGrating_Singlewall, self).__init__()
+    super(Spiral_NoCenterBraggGrating, self).__init__()
 
     # declare the parameters
     self.param("silayer", self.TypeLayer, "Si Layer", default = LayerInfo(1, 0))
     self.param("w", self.TypeDouble, "Waveguide Width [nm]", default = 400)
     self.param("DeviceLength", self.TypeDouble, "Device Path Length [mm]", default = 0.5)
     self.param("Cwidth", self.TypeDouble, "Corrugation Width [nm]", default = 80)
-    self.param("period", self.TypeDouble, "period [nm]", default = 420 )
+    self.param("period", self.TypeDouble, "period [nm]", default = 420 ) 
     self.param("textl", self.TypeLayer, "Text Layer", default = LayerInfo(10, 0))
     self.param("pinrec", self.TypeLayer, "PinRec Layer", default = LayerInfo(69, 0))
     self.param("devrec", self.TypeLayer, "DevRec Layer", default = LayerInfo(68, 0))
     
   def display_text_impl(self):
     # Provide a descriptive text for the cell
-    return "SpiralBraggGrating_SingleWall"
+    return "SpiralBraggGrating"
 
   def can_create_from_shape_impl(self):
     return False   
@@ -1181,6 +928,13 @@ class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
     angle_array=[]
     for theta in angle_from_corrugation(r,length,grating_length):
         angle_array.append(theta)
+    
+    #IF WANT TO CALCULATE BASED ON LENGTH OF WG that includes gratings
+    '''    
+    angle_array_NoCenter=[]
+    for theta in angle_from_corrugation_NoCenter(r,length,grating_length):
+        angle_array_NoCenter.append(theta)
+    '''
     ####################
     
     #####################
@@ -1195,19 +949,23 @@ class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
     left2_y_inc = []
     left2_x_dec = []
     left2_y_dec = []
-    #Wall1 of the right    
-    right_x_inc = []
-    right_y_inc = []
-    right_x_dec = []
-    right_y_dec = []
-    #Wall2 of the right
-    right2_x_inc = []
-    right2_y_inc = []
-    right2_x_dec = []
-    right2_y_dec = []
+    
+    
+    nongrating = spiral_gen_NoCenter(r,angle_array,w,cwidth,grating_length)
+    left1c_x = nongrating[0]
+    left1c_y = nongrating[1]
+    left2c_x = nongrating[2]
+    left2c_y = nongrating[3]
+    lasti = nongrating[4]
+    right1c_x = [i*-1 for i in left1c_x]
+    right1c_y = [i*-1 for i in left1c_y]
+    right2c_x = [i*-1 for i in left2c_x]
+    right2c_y = [i*-1 for i in left2c_y]
     
     #Calculate the Spiral Coordinates
-    for coord in spiral_gen_singlewall_outer(r,angle_array,w,cwidth,grating_length):
+    #IF WANT TO CALCULATE BASED ON LENGTH OF WG that includes gratings
+    #for coord in spiral_gen_NoCenter_Gratings(r,angle_array_NoCenter,w,cwidth,grating_length,lasti-1):
+    for coord in spiral_gen_NoCenter_Gratings(r,angle_array,w,cwidth,grating_length,lasti-1):
         left_x_inc.append(coord[0])
         left_y_inc.append(coord[1])
         left_x_dec.append(coord[2])
@@ -1217,28 +975,26 @@ class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
         left2_y_inc.append(coord[5])
         left2_x_dec.append(coord[6])
         left2_y_dec.append(coord[7])
-        
-    for coord in spiral_gen_singlewall_inner(r,angle_array,w,cwidth,grating_length):
-      right_x_inc.append(coord[0])
-      right_y_inc.append(coord[1])
-      right_x_dec.append(coord[2])
-      right_y_dec.append(coord[3])
-      
-      right2_x_inc.append(coord[4])
-      right2_y_inc.append(coord[5])
-      right2_x_dec.append(coord[6])
-      right2_y_dec.append(coord[7])
     
+    dx = coord[8]
+    dy = coord[9]
+    
+    right1x =[]
+    right1y =[]
+    right2x =[]
+    right2y =[]
+    for coord in spiral_gen_NoCenter_Gratings(r,angle_array,w,0,grating_length,lasti-1):
+      right1x.append(coord[0])
+      right1y.append(coord[1])
+      right2x.append(coord[2])
+      right2y.append(coord[3])
+
     #Flip coords for right side coords
-    right_x_inc = [i*-1 for i in right_x_inc]
-    right_y_inc = [i*-1 for i in right_y_inc]
-    right_x_dec = [i*-1 for i in right_x_dec]
-    right_y_dec = [i*-1 for i in right_y_dec]
-    
-    right2_x_inc = [i*-1 for i in right2_x_inc]
-    right2_y_inc = [i*-1 for i in right2_y_inc]
-    right2_x_dec = [i*-1 for i in right2_x_dec]
-    right2_y_dec = [i*-1 for i in right2_y_dec]
+    right1x = [i*-1 for i in right1x]
+    right1y = [i*-1 for i in right1y]
+    right2x = [i*-1 for i in right2x]
+    right2y = [i*-1 for i in right2y]
+
     #Obtain a sorted list of the coordinates of one wall.
     #repeat for the rest
     result = sort_coord(True,left_x_inc,left_y_inc,left_x_dec,left_y_dec)
@@ -1247,36 +1003,28 @@ class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
     result = sort_coord(False,left2_x_inc,left2_y_inc,left2_x_dec,left2_y_dec)
     left2x = result[0]
     left2y = result[1]
-    
-    result = sort_coord(False,right_x_inc,right_y_inc,right_x_dec,right_y_dec)
-    right1x = result[0]
-    right1y = result[1]
-    #Delete the first two points as they over lap
-    del right1x[0]#calls the same index here because once you remove 0, 1 becomes 0, and so on and so forth
-    del right1x[0]
-    del right1y[0]
-    del right1y[0]
-    
-    result = sort_coord(True,right2_x_inc,right2_y_inc,right2_x_dec,right2_y_dec)
-    right2x = result[0]
-    right2y = result[1]
-    del right2x[0]
-    del right2x[0]
-    del right2y[0]
-    del right2y[0]
+
+    #Center Boundary Point
+    del left1x[0]
+    del left1y[0]
+    del left2x[0]
+    del left2y[0]
     
     #UNIFORM SECTION
+    
     del left1x[-1]
     del left1y[-1]
     del left2x[-1]
     del left2y[-1]
-    
+
     del right1x[-1]
     del right1y[-1]
     del right2x[-1]
     del right2y[-1]
-     
-    result = finish_spiral(r,angle_array[-1],w)
+ 
+    result = finish_spiral(r,angle_array[-2],w,dx,dy)
+    #IF WANT TO CALCULATE BASED ON LENGTH OF WG that includes gratings
+    #result = finish_spiral(r,angle_array_NoCenter[-2],w,dx,dy)
     left1x.extend(result[0])
     left1y.extend(result[1])
     left2x.extend(result[2])
@@ -1293,13 +1041,21 @@ class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
     spiral_y = []
     
     spiral_x.extend(reversed(left1x))
+    spiral_x.extend(reversed(left1c_x))
+    spiral_x.extend(right2c_x)
     spiral_x.extend(right2x)
     spiral_x.extend(reversed(right1x))
+    spiral_x.extend(reversed(right1c_x))
+    spiral_x.extend(left2c_x)
     spiral_x.extend(left2x)
     
     spiral_y.extend(reversed(left1y))
+    spiral_y.extend(reversed(left1c_y))
+    spiral_y.extend(right2c_y)
     spiral_y.extend(right2y)
     spiral_y.extend(reversed(right1y))
+    spiral_y.extend(reversed(right1c_y))
+    spiral_y.extend(left2c_y)
     spiral_y.extend(left2y)
     
     #makes Dpoints from the coordinates
@@ -1310,26 +1066,31 @@ class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
     #dpoint polygon solution thanks to Jaspreet#
     element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
     shapes(LayerSiN).insert(element)
-    #shapes(LayerSiN).insert(Polygon.from_dpoly(dpolygon))
-        
+    #shapes(LayerSiN).insert(Polygon.from_dpoly(dpolygon))      
+    
     # Create the pins, as short paths:
     pin_length = 200 # database units, = 0.2 microns
-    DeviceHeight = self.cell.bbox().height()*dbu
     LendX = result[4]
     RendX = -result[4]
     isEven = result[5] #Left and Right sides swap depending on the circle drawn, this returns which side it should be on
-    MOD = 1 #Based on the side, modifies certain values that are just scalar additions below
     
     if isEven == True:
-      DeviceHeight *= -1
+      DeviceHeight = self.cell.bbox().height()*dbu
+      MOD = 1 #Based on the side, modifies certain values that are just scalar additions below    
+    else:
+      DeviceHeight = -self.cell.bbox().height()*dbu
       MOD = -1
-       
-    #Draw waveguides to the boundary of the box
-    points_wg1 = [[0,0],[0,-DeviceHeight/2]] 
-    layout_waveguide_rel(self.cell, LayerSi, [RendX,0], points_wg1, w*2, 15)    
-    points_wg2 = [[0,0],[0,DeviceHeight/2]]
-    layout_waveguide_rel(self.cell, LayerSi, [LendX,0], points_wg2, w*2, 15)     
-  
+    
+    #waveguides, didnt use pathing because it has some rounding errors in terms of width   
+    dpts=[pya.DPoint(LendX+w, 0),pya.DPoint(LendX-w, 0),pya.DPoint(LendX-w, DeviceHeight/2),pya.DPoint(LendX+w, DeviceHeight/2 )]
+    dpolygon = DPolygon(dpts)
+    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    shapes(LayerSiN).insert(element)
+    
+    dpts=[pya.DPoint(RendX+w, 0),pya.DPoint(RendX-w, 0),pya.DPoint(RendX-w, -DeviceHeight/2),pya.DPoint(RendX+w, -DeviceHeight/2 )]
+    dpolygon = DPolygon(dpts)
+    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    shapes(LayerSiN).insert(element)
 
     pin = pya.Path([Point((RendX)/dbu, -DeviceHeight/2/dbu-pin_length/2), Point((RendX)/dbu,-DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
     shapes(LayerPinRecN).insert(pin)
@@ -1346,12 +1107,13 @@ class BraggGrating_Singlewall(pya.PCellDeclarationHelper):
     shape.text_size = 0.4/dbu
     
     # Create the device recognition layer
-    dev = Box((LendX)/dbu+w*MOD/dbu, -DeviceHeight/2/dbu, (RendX)/dbu-w*MOD/dbu, DeviceHeight/2/dbu )
+    #dev = Box((LendX)/dbu+w*MOD/dbu, -DeviceHeight/2/dbu-pin_length/2, (RendX)/dbu-w*MOD/dbu, DeviceHeight/2/dbu+pin_length/2 )
+    #I literally declared the size of this box based on the other box. Lol.
+    dev = Box(-self.cell.bbox().width()/2,-self.cell.bbox().height()/2+pin_length/2,self.cell.bbox().width()/2,self.cell.bbox().height()/2-pin_length/2)
     shapes(LayerDevRecN).insert(dev)
-      
-    print("Done drawing the layout for - Singlewall Spiral")    
-
-
+          
+    print("Done drawing the layout for - Spiral NoCenterBraggGrating")
+    
 class SiEPIC(pya.Library):
   """
   The library where we will put the PCell into 
@@ -1367,10 +1129,9 @@ class SiEPIC(pya.Library):
     # Create the PCell declarations
     self.layout().register_pcell("[1] Spiral_BraggGrating", PCMSpiralBraggGrating())
     self.layout().register_pcell("[2] Spiral_BraggGrating_Slab", PCMSpiralBraggGratingSlab())
-    self.layout().register_pcell("[3] HalfSpiral_BraggGrating", HalfSpiralBraggGrating())
-    self.layout().register_pcell("[4] SingleWall_BraggGrating", BraggGrating_Singlewall())
-
-    # Register us with the name "".
+    self.layout().register_pcell("[3] Spiral_NoCenterBraggGrating", Spiral_NoCenterBraggGrating())
+    
+    # Register us with the name "Adiabatic_Spirals".
     # If a library with that name already existed, it will be replaced then.
     self.register("Adiabatic_Spirals")
  
