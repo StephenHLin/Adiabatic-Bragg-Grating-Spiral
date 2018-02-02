@@ -42,6 +42,7 @@ import pya
 import math
 import cmath
 from pya import *
+from SiEPIC.utils import get_technology, get_technology_by_name
 
 MODULE_NUMPY = True
 
@@ -51,8 +52,8 @@ j = cmath.sqrt(-1)
 sign = lambda x: math.copysign(1,x) #define the sign function
 alpha = 1 #related to the spirals radius growth, can only guess and test so far
 
-r = 16 #radius of the Sbend spiral
-gap = 4 #gap between wgs
+r = 16.0 #radius of the Sbend spiral
+gap = 4.0 #gap between wgs
 angle_stepsize = 0.0001 #0.00001 required for less than 1 nm error
 
 # Create aliases for KLayout Python API methods:
@@ -238,7 +239,7 @@ def finish_spiral(r,finalangle,w,dx,dy):
       #print (nextpie)
       #print (math.ceil(nextpie/pi) %2)
     
-    return x_inc,y_inc,x_dec,y_dec,endx,isEven
+    return x_inc,y_inc,x_dec,y_dec#,endx,isEven
     
 def spiral_gen_NoCenter(r,angle_array,w,cwidth,grating_length):
     #This generates the spirals coordinates from the given angle arrays. Given there is a cwidth
@@ -378,16 +379,17 @@ class PCMSpiralBraggGrating(pya.PCellDeclarationHelper):
 
     # Important: initialize the super class
     super(PCMSpiralBraggGrating, self).__init__()
-
+    TECHNOLOGY = get_technology_by_name('EBeam')
+    
     # declare the parameters
-    self.param("silayer", self.TypeLayer, "Si Layer", default = LayerInfo(1, 0))
+    self.param("silayer", self.TypeLayer, "Si Layer", default = TECHNOLOGY['Waveguide'])
     self.param("w", self.TypeDouble, "Waveguide Width [nm]", default = 400)
     self.param("DeviceLength", self.TypeDouble, "Device Path Length [mm]", default = 0.5)
     self.param("Cwidth", self.TypeDouble, "Corrugation Width [nm]", default = 80)
     self.param("period", self.TypeDouble, "period [nm]", default = 420 ) 
     self.param("textl", self.TypeLayer, "Text Layer", default = LayerInfo(10, 0))
-    self.param("pinrec", self.TypeLayer, "PinRec Layer", default = LayerInfo(69, 0))
-    self.param("devrec", self.TypeLayer, "DevRec Layer", default = LayerInfo(68, 0))
+    self.param("pinrec", self.TypeLayer, "PinRec Layer", default = TECHNOLOGY['PinRec'])
+    self.param("devrec", self.TypeLayer, "DevRec Layer", default = TECHNOLOGY['DevRec'])
     
   def display_text_impl(self):
     # Provide a descriptive text for the cell
@@ -397,6 +399,7 @@ class PCMSpiralBraggGrating(pya.PCellDeclarationHelper):
     return False   
   
   def produce_impl(self):
+    from SiEPIC._globals import PIN_LENGTH
     # This is the main part of the implementation: create the layout
     
     # fetch the parameters
@@ -539,48 +542,34 @@ class PCMSpiralBraggGrating(pya.PCellDeclarationHelper):
     #shapes(LayerSiN).insert(Polygon.from_dpoly(dpolygon))      
     
     # Create the pins, as short paths:
-    pin_length = 200 # database units, = 0.2 microns
-    LendX = result[4]
-    RendX = -result[4]
-    isEven = result[5] #Left and Right sides swap depending on the circle drawn, this returns which side it should be on
+    DeviceHeight = self.cell.bbox().height()*dbu
     
-    if isEven == True:
-      DeviceHeight = self.cell.bbox().height()*dbu
-      MOD = 1 #Based on the side, modifies certain values that are just scalar additions below    
-    else:
-      DeviceHeight = -self.cell.bbox().height()*dbu
-      MOD = -1
-    
-    #waveguides, didnt use pathing because it has some rounding errors in terms of width   
-    dpts=[pya.DPoint(LendX+w, 0),pya.DPoint(LendX-w, 0),pya.DPoint(LendX-w, DeviceHeight/2),pya.DPoint(LendX+w, DeviceHeight/2 )]
-    dpolygon = DPolygon(dpts)
-    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN).insert(element)
-    
-    dpts=[pya.DPoint(RendX+w, 0),pya.DPoint(RendX-w, 0),pya.DPoint(RendX-w, -DeviceHeight/2),pya.DPoint(RendX+w, -DeviceHeight/2 )]
-    dpolygon = DPolygon(dpts)
-    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN).insert(element)
-
-    pin = pya.Path([Point((RendX)/dbu, -DeviceHeight/2/dbu-pin_length/2), Point((RendX)/dbu,-DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
+    #WG1
+    wvg = pya.Path([Point((self.cell.bbox().width()/2.0)-w/dbu, 0),Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/dbu/2.0)], w/dbu*2.0)
+    shapes(LayerSiN).insert(wvg)
+    #WG2
+    wvg = pya.Path([Point(-(self.cell.bbox().width()/2.0)+w/dbu, 0),Point(-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/dbu/2.0)], w/dbu*2.0)
+    shapes(LayerSiN).insert(wvg)
+    #pin1
+    pin = pya.Path([Point(-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/2.0/dbu+PIN_LENGTH/2.0), Point(-(self.cell.bbox().width()/2.0)+w/dbu,-DeviceHeight/2.0/dbu-PIN_LENGTH/2.0)], w/dbu*2.0)
     shapes(LayerPinRecN).insert(pin)
-    t = Trans((RendX)/dbu, -DeviceHeight/2/dbu)
+    t = Trans(Trans.R0,-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/2.0/dbu)
     text = Text ("pin1", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
-
-    pin = pya.Path([Point((LendX)/dbu, DeviceHeight/2/dbu-pin_length/2), Point((LendX)/dbu, DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
+    #pin2
+    pin = pya.Path([Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0/dbu-PIN_LENGTH/2.0), Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0/dbu+PIN_LENGTH/2.0)], w/dbu*2.0)
     shapes(LayerPinRecN).insert(pin)
-    t = Trans((LendX)/dbu, DeviceHeight/2/dbu)
+    t = Trans(Trans.R0,(self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0/dbu)
     text = Text ("pin2", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
-    
+        
     # Create the device recognition layer
-    #dev = Box((LendX)/dbu+w*MOD/dbu, -DeviceHeight/2/dbu-pin_length/2, (RendX)/dbu-w*MOD/dbu, DeviceHeight/2/dbu+pin_length/2 )
     #I literally declared the size of this box based on the other box. Lol.
-    dev = Box(-self.cell.bbox().width()/2,-self.cell.bbox().height()/2+pin_length/2,self.cell.bbox().width()/2,self.cell.bbox().height()/2-pin_length/2)
+    dev = Box(-self.cell.bbox().width()/2.0,-self.cell.bbox().height()/2.0+PIN_LENGTH/2.0,self.cell.bbox().width()/2.0,self.cell.bbox().height()/2.0-PIN_LENGTH/2.0)
     shapes(LayerDevRecN).insert(dev)
+
           
     print("Done drawing the layout for - PCM Spiral")
 
@@ -590,9 +579,10 @@ class PCMSpiralBraggGratingSlab(pya.PCellDeclarationHelper):
 
     # Important: initialize the super class
     super(PCMSpiralBraggGratingSlab, self).__init__()
+    TECHNOLOGY = get_technology_by_name('EBeam')
 
     # declare the parameters
-    self.param("silayer", self.TypeLayer, "Si Layer", default = LayerInfo(1, 0))
+    self.param("silayer", self.TypeLayer, "Si Layer", default = TECHNOLOGY['Waveguide'])
     self.param("w", self.TypeDouble, "Waveguide Width [nm]", default = 400)
     self.param("DeviceLength", self.TypeDouble, "Device Path Length [mm]", default = 0.5)
     self.param("Cwidth", self.TypeDouble, "Corrugation Width [nm]", default = 80)
@@ -600,8 +590,8 @@ class PCMSpiralBraggGratingSlab(pya.PCellDeclarationHelper):
     self.param("silayer2", self.TypeLayer, "Slab Si Layer", default = LayerInfo(31, 0))
     self.param("sw", self.TypeDouble, "Slab Width [nm]", default = 500 )
     self.param("textl", self.TypeLayer, "Text Layer", default = LayerInfo(10, 0))
-    self.param("pinrec", self.TypeLayer, "PinRec Layer", default = LayerInfo(69, 0))
-    self.param("devrec", self.TypeLayer, "DevRec Layer", default = LayerInfo(68, 0))
+    self.param("pinrec", self.TypeLayer, "PinRec Layer", default = TECHNOLOGY['PinRec'])
+    self.param("devrec", self.TypeLayer, "DevRec Layer", default = TECHNOLOGY['DevRec'])
     
   def display_text_impl(self):
     # Provide a descriptive text for the cell
@@ -611,6 +601,8 @@ class PCMSpiralBraggGratingSlab(pya.PCellDeclarationHelper):
     return False   
   
   def produce_impl(self):
+    from SiEPIC._globals import PIN_LENGTH
+    
     ly = self.layout
     shapes = self.cell.shapes
 
@@ -820,64 +812,49 @@ class PCMSpiralBraggGratingSlab(pya.PCellDeclarationHelper):
     dpolygonS = DPolygon(dptsS)    
     #dmult_pts = mult_pts(dpts,1)
         
+
+    #Step6 Pins!    
+    DeviceWidthNS = self.cell.bbox().width() #width of device without slab included yet, for drawing WG
+    
+    #insert slab
     #dpoint polygon solution thanks to Jaspreet#
     elementS = Polygon.from_dpoly(dpolygonS*(1.0/dbu))
     shapes(LayerSiN_Slab).insert(elementS)
-
-
-    #Step6 Pins!    
-    # Create the pins, as short paths:
-    pin_length = 200 # database units, = 0.2 microns
-    LendX = result[4]
-    RendX = -result[4]
-    isEven = result[5] #Left and Right sides swap depending on the circle drawn, this returns which side it should be on
-    
-    if isEven == True:
-      DeviceHeight = self.cell.bbox().height()*dbu
-      MOD = 1 #Based on the side, modifies certain values that are just scalar additions below
-    else:
-      DeviceHeight = -self.cell.bbox().height()*dbu
-      MOD = -1
-       
-    #waveguides, didnt use pathing because it has some rounding errors in terms of width   
-    dpts=[pya.DPoint(LendX+w, 0),pya.DPoint(LendX-w, 0),pya.DPoint(LendX-w, DeviceHeight/2),pya.DPoint(LendX+w, DeviceHeight/2 )]
+    #Slab Tapers
+    dpts=[pya.DPoint(-(self.cell.bbox().width()/2.0*dbu), 0),pya.DPoint(-(self.cell.bbox().width()/2.0)*dbu+sw*2.0, 0),pya.DPoint(-(self.cell.bbox().width()/2.0)*dbu+(sw-w)+w*2.0, -10),pya.DPoint(-(self.cell.bbox().width()/2.0)*dbu+(sw-w), -10)]
     dpolygon = DPolygon(dpts)
     element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN).insert(element)
-    
-    dpts=[pya.DPoint(RendX+w, 0),pya.DPoint(RendX-w, 0),pya.DPoint(RendX-w, -DeviceHeight/2),pya.DPoint(RendX+w, -DeviceHeight/2 )]
+    shapes(LayerSiN_Slab).insert(element)
+    dpts=[pya.DPoint((self.cell.bbox().width()/2.0*dbu), 0),pya.DPoint((self.cell.bbox().width()/2.0)*dbu-sw*2.0, 0),pya.DPoint((self.cell.bbox().width()/2.0)*dbu-(sw-w)-w*2.0, +10),pya.DPoint((self.cell.bbox().width()/2.0)*dbu-(sw-w), +10)]
     dpolygon = DPolygon(dpts)
     element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN).insert(element)  
-  
+    shapes(LayerSiN_Slab).insert(element)
 
-    pin = pya.Path([Point((RendX)/dbu, -DeviceHeight/2/dbu-pin_length/2), Point((RendX)/dbu,-DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
+    DeviceHeight = self.cell.bbox().height()*dbu
+    #WG1
+    wvg = pya.Path([Point((DeviceWidthNS/2.0)-w/dbu, 0),Point((DeviceWidthNS/2.0)-w/dbu, DeviceHeight/dbu/2.0)], w/dbu*2.0)
+    shapes(LayerSiN).insert(wvg)  
+    #WG2
+    wvg = pya.Path([Point((-DeviceWidthNS/2.0)+w/dbu, 0),Point((-DeviceWidthNS/2.0)+w/dbu, -DeviceHeight/dbu/2.0)], w/dbu*2.0)
+    shapes(LayerSiN).insert(wvg)
+    #Pin1
+    pin = pya.Path([Point((-DeviceWidthNS/2.0)+w/dbu, -DeviceHeight/2.0/dbu+PIN_LENGTH/2.0), Point((-DeviceWidthNS/2.0)+w/dbu,-DeviceHeight/2.0/dbu-PIN_LENGTH/2.0)], w/dbu*2.0)
     shapes(LayerPinRecN).insert(pin)
-    t = Trans((RendX)/dbu, -DeviceHeight/2/dbu)
+    t = Trans(Trans.R0,-(DeviceWidthNS/2.0)+w/dbu, -DeviceHeight/2.0/dbu)
     text = Text ("pin1", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
-
-    pin = pya.Path([Point((LendX)/dbu, DeviceHeight/2/dbu-pin_length/2), Point((LendX)/dbu, DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
+    #Pin2
+    pin = pya.Path([Point((DeviceWidthNS/2.0)-w/dbu, DeviceHeight/2.0/dbu-PIN_LENGTH/2.0), Point((DeviceWidthNS/2.0)-w/dbu, DeviceHeight/2.0/dbu+PIN_LENGTH/2.0)], w/dbu*2.0)
     shapes(LayerPinRecN).insert(pin)
-    t = Trans((LendX)/dbu, DeviceHeight/2/dbu)
+    t = Trans(Trans.R0,(DeviceWidthNS/2.0)-w/dbu, DeviceHeight/2.0/dbu)
     text = Text ("pin2", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
-    
-    #Step7 Tapers, 10microns default
-    dpts=[pya.DPoint(LendX+sw, 0),pya.DPoint(LendX-sw, 0),pya.DPoint(LendX-w, MOD*10),pya.DPoint(LendX+w, MOD*10 )]
-    dpolygon = DPolygon(dpts)
-    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN_Slab).insert(element)
-    
-    dpts=[pya.DPoint(RendX+sw, 0),pya.DPoint(RendX-sw, 0),pya.DPoint(RendX-w, -MOD*10),pya.DPoint(RendX+w, -MOD*10 )]
-    dpolygon = DPolygon(dpts)
-    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN_Slab).insert(element)
-    
+     
     # Create the device recognition layer
-    dev = Box(-self.cell.bbox().width()/2,-self.cell.bbox().height()/2+pin_length/2,self.cell.bbox().width()/2,self.cell.bbox().height()/2-pin_length/2)
+    #I literally declared the size of this box based on the other box. Lol.
+    dev = Box(-self.cell.bbox().width()/2.0,-self.cell.bbox().height()/2.0+PIN_LENGTH/2.0,self.cell.bbox().width()/2.0,self.cell.bbox().height()/2.0-PIN_LENGTH/2.0)
     shapes(LayerDevRecN).insert(dev)
     
     print("Done drawing the layout for - PCM Spiral with Slabs")
@@ -888,16 +865,17 @@ class Spiral_NoCenterBraggGrating(pya.PCellDeclarationHelper):
 
     # Important: initialize the super class
     super(Spiral_NoCenterBraggGrating, self).__init__()
+    TECHNOLOGY = get_technology_by_name('EBeam')
 
     # declare the parameters
-    self.param("silayer", self.TypeLayer, "Si Layer", default = LayerInfo(1, 0))
+    self.param("silayer", self.TypeLayer, "Si Layer", default = TECHNOLOGY['Waveguide'])
     self.param("w", self.TypeDouble, "Waveguide Width [nm]", default = 400)
     self.param("DeviceLength", self.TypeDouble, "Device Path Length [mm]", default = 0.5)
     self.param("Cwidth", self.TypeDouble, "Corrugation Width [nm]", default = 80)
     self.param("period", self.TypeDouble, "period [nm]", default = 420 ) 
     self.param("textl", self.TypeLayer, "Text Layer", default = LayerInfo(10, 0))
-    self.param("pinrec", self.TypeLayer, "PinRec Layer", default = LayerInfo(69, 0))
-    self.param("devrec", self.TypeLayer, "DevRec Layer", default = LayerInfo(68, 0))
+    self.param("pinrec", self.TypeLayer, "PinRec Layer", default = TECHNOLOGY['PinRec'])
+    self.param("devrec", self.TypeLayer, "DevRec Layer", default = TECHNOLOGY['DevRec'])
     
   def display_text_impl(self):
     # Provide a descriptive text for the cell
@@ -908,7 +886,8 @@ class Spiral_NoCenterBraggGrating(pya.PCellDeclarationHelper):
   
   def produce_impl(self):
     # This is the main part of the implementation: create the layout
-    
+    from SiEPIC._globals import PIN_LENGTH
+
     ly = self.layout
     shapes = self.cell.shapes
 
@@ -1069,39 +1048,47 @@ class Spiral_NoCenterBraggGrating(pya.PCellDeclarationHelper):
     #shapes(LayerSiN).insert(Polygon.from_dpoly(dpolygon))      
     
     # Create the pins, as short paths:
-    pin_length = 200 # database units, = 0.2 microns
-    LendX = result[4]
-    RendX = -result[4]
-    isEven = result[5] #Left and Right sides swap depending on the circle drawn, this returns which side it should be on
+    #LendX = result[4]
+    #RendX = -result[4]
+    #isEven = result[5] #Left and Right sides swap depending on the circle drawn, this returns which side it should be on
     
-    if isEven == True:
-      DeviceHeight = self.cell.bbox().height()*dbu
-      MOD = 1 #Based on the side, modifies certain values that are just scalar additions below    
-    else:
-      DeviceHeight = -self.cell.bbox().height()*dbu
-      MOD = -1
-    
-    #waveguides, didnt use pathing because it has some rounding errors in terms of width   
-    dpts=[pya.DPoint(LendX+w, 0),pya.DPoint(LendX-w, 0),pya.DPoint(LendX-w, DeviceHeight/2),pya.DPoint(LendX+w, DeviceHeight/2 )]
-    dpolygon = DPolygon(dpts)
-    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN).insert(element)
-    
-    dpts=[pya.DPoint(RendX+w, 0),pya.DPoint(RendX-w, 0),pya.DPoint(RendX-w, -DeviceHeight/2),pya.DPoint(RendX+w, -DeviceHeight/2 )]
-    dpolygon = DPolygon(dpts)
-    element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
-    shapes(LayerSiN).insert(element)
+    #if isEven == True:
+      #DeviceHeight = self.cell.bbox().height()*dbu
+      #MOD = 1 #Based on the side, modifies certain values that are just scalar additions below    
+    #else:
+      #DeviceHeight = -self.cell.bbox().height()*dbu
+      #MOD = -1
 
-    pin = pya.Path([Point((RendX)/dbu, -DeviceHeight/2/dbu-pin_length/2), Point((RendX)/dbu,-DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
+    DeviceHeight = self.cell.bbox().height()*dbu
+    #waveguides, didnt use pathing because it has some rounding errors in terms of width   
+    #dpts=[pya.DPoint(LendX+w, 0),pya.DPoint(LendX-w, 0),pya.DPoint(LendX-w, DeviceHeight/2.0),pya.DPoint(LendX+w, DeviceHeight/2.0 )]
+    #dpolygon = DPolygon(round(dpts))
+    #element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    #shapes(LayerSiN).insert(element)
+    
+    wvg = pya.Path([Point((self.cell.bbox().width()/2.0)-w/dbu, 0),Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/dbu/2.0)], w/dbu*2.0)
+    shapes(LayerSiN).insert(wvg)
+    
+    #dpts=[pya.DPoint(RendX+w, 0),pya.DPoint(RendX-w, 0),pya.DPoint(RendX-w, -DeviceHeight/2.0),pya.DPoint(RendX+w, -DeviceHeight/2.0 )]
+    #dpolygon = DPolygon(dpts)
+    #element = Polygon.from_dpoly(dpolygon*(1.0/dbu))
+    #shapes(LayerSiN).insert(element)
+
+    wvg = pya.Path([Point(-(self.cell.bbox().width()/2.0)+w/dbu, 0),Point(-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/dbu/2.0)], w/dbu*2.0)
+    shapes(LayerSiN).insert(wvg)
+
+    #pin = pya.Path([Point((RendX)/dbu*1.0, -DeviceHeight/2.0/dbu-PIN_LENGTH/2.0), Point((RendX)/dbu*1.0,-DeviceHeight/2.0/dbu+PIN_LENGTH/2.0)], w/dbu*2.0)
+    pin = pya.Path([Point(-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/2.0/dbu+PIN_LENGTH/2.0), Point(-(self.cell.bbox().width()/2.0)+w/dbu,-DeviceHeight/2.0/dbu-PIN_LENGTH/2.0)], w/dbu*2.0)
     shapes(LayerPinRecN).insert(pin)
-    t = Trans((RendX)/dbu, -DeviceHeight/2/dbu)
+    t = Trans(Trans.R0,-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/2.0/dbu)
     text = Text ("pin1", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
 
-    pin = pya.Path([Point((LendX)/dbu, DeviceHeight/2/dbu-pin_length/2), Point((LendX)/dbu, DeviceHeight/2/dbu+pin_length/2)], w/dbu*2)
+    #pin = pya.Path([Point((LendX)/dbu*1.0, DeviceHeight/2.0/dbu-PIN_LENGTH/2.0), Point((LendX)/dbu*1.0, DeviceHeight/2.0/dbu+PIN_LENGTH/2.0)], w/dbu*2.0)
+    pin = pya.Path([Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0/dbu-PIN_LENGTH/2.0), Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0/dbu+PIN_LENGTH/2.0)], w/dbu*2.0)
     shapes(LayerPinRecN).insert(pin)
-    t = Trans((LendX)/dbu, DeviceHeight/2/dbu)
+    t = Trans(Trans.R0,(self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0/dbu)
     text = Text ("pin2", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
@@ -1109,7 +1096,7 @@ class Spiral_NoCenterBraggGrating(pya.PCellDeclarationHelper):
     # Create the device recognition layer
     #dev = Box((LendX)/dbu+w*MOD/dbu, -DeviceHeight/2/dbu-pin_length/2, (RendX)/dbu-w*MOD/dbu, DeviceHeight/2/dbu+pin_length/2 )
     #I literally declared the size of this box based on the other box. Lol.
-    dev = Box(-self.cell.bbox().width()/2,-self.cell.bbox().height()/2+pin_length/2,self.cell.bbox().width()/2,self.cell.bbox().height()/2-pin_length/2)
+    dev = Box(-self.cell.bbox().width()/2.0,-self.cell.bbox().height()/2.0+PIN_LENGTH/2.0,self.cell.bbox().width()/2.0,self.cell.bbox().height()/2.0-PIN_LENGTH/2.0)
     shapes(LayerDevRecN).insert(dev)
           
     print("Done drawing the layout for - Spiral NoCenterBraggGrating")
