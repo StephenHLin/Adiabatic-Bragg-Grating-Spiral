@@ -223,18 +223,18 @@ def finish_spiral(r,finalangle,w,dx,dy):
     x_dec.append(S.real)
     y_dec.append(S.imag)
 
-    deltaX = (r*sign(nextpie))*cmath.exp(-abs(nextpie)/alpha)
-    r_spiral = (r*sign(nextpie))+(gap*nextpie/pi)
-    S = (r_spiral*cmath.exp(j*abs(nextpie)))-deltaX 
-    endx = S.real
+    #deltaX = (r*sign(nextpie))*cmath.exp(-abs(nextpie)/alpha)
+    #r_spiral = (r*sign(nextpie))+(gap*nextpie/pi)
+    #S = (r_spiral*cmath.exp(j*abs(nextpie)))-deltaX 
+    #endx = S.real
 
-    if math.ceil(nextpie/pi) %2 ==0:
-      isEven = True
+    #if math.ceil(nextpie/pi) %2 ==0:
+      #isEven = True
       #print ("even")
       #print (nextpie)
       #print (math.ceil(nextpie/pi) %2)
-    else:
-      isEven = False
+    #else:
+      #isEven = False
       #print ("odd")
       #print (nextpie)
       #print (math.ceil(nextpie/pi) %2)
