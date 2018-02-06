@@ -43,6 +43,7 @@ import math
 import cmath
 from pya import *
 from SiEPIC.utils import get_technology, get_technology_by_name
+from SiEPIC.scripts import path_to_waveguide
 
 MODULE_NUMPY = True
 
@@ -542,29 +543,31 @@ class PCMSpiralBraggGrating(pya.PCellDeclarationHelper):
     #shapes(LayerSiN).insert(Polygon.from_dpoly(dpolygon))      
     
     # Create the pins, as short paths:
-    DeviceHeight = self.cell.bbox().height()*dbu
+    DeviceHeight = self.cell.bbox().height()
     
-    #WG1
-    wvg = pya.Path([Point((self.cell.bbox().width()/2.0)-w/dbu, 0),Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/dbu/2.0)], w/dbu*2.0)
-    shapes(LayerSiN).insert(wvg)
-    #WG2
-    wvg = pya.Path([Point(-(self.cell.bbox().width()/2.0)+w/dbu, 0),Point(-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/dbu/2.0)], w/dbu*2.0)
-    shapes(LayerSiN).insert(wvg)
+    #WG1  
+    wg1 = Box(self.cell.bbox().width()/2.0,0,self.cell.bbox().width()/2.0-2*w/dbu,DeviceHeight/2.0)
+    shapes(LayerSiN).insert(wg1)
+    #WG2  
+    wg2 = Box(-self.cell.bbox().width()/2.0,0,-self.cell.bbox().width()/2.0+2*w/dbu,-DeviceHeight/2.0)
+    shapes(LayerSiN).insert(wg2)
+    
     #pin1
-    pin = pya.Path([Point(-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/2.0/dbu+PIN_LENGTH/2.0), Point(-(self.cell.bbox().width()/2.0)+w/dbu,-DeviceHeight/2.0/dbu-PIN_LENGTH/2.0)], w/dbu*2.0)
+    pin = pya.Path([Point(-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/2.0+PIN_LENGTH/2.0), Point(-(self.cell.bbox().width()/2.0)+w/dbu,-DeviceHeight/2.0-PIN_LENGTH/2.0)], w/dbu*2.0)
     shapes(LayerPinRecN).insert(pin)
-    t = Trans(Trans.R0,-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/2.0/dbu)
+    t = Trans(Trans.R0,-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/2.0)
     text = Text ("pin1", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
     #pin2
-    pin = pya.Path([Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0/dbu-PIN_LENGTH/2.0), Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0/dbu+PIN_LENGTH/2.0)], w/dbu*2.0)
+    pin = pya.Path([Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0-PIN_LENGTH/2.0), Point((self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0+PIN_LENGTH/2.0)], w/dbu*2.0)
     shapes(LayerPinRecN).insert(pin)
-    t = Trans(Trans.R0,(self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0/dbu)
+    t = Trans(Trans.R0,(self.cell.bbox().width()/2.0)-w/dbu, DeviceHeight/2.0)
     text = Text ("pin2", t)
     shape = shapes(LayerPinRecN).insert(text)
     shape.text_size = 0.4/dbu
-        
+    
+      
     # Create the device recognition layer
     #I literally declared the size of this box based on the other box. Lol.
     dev = Box(-self.cell.bbox().width()/2.0,-self.cell.bbox().height()/2.0+PIN_LENGTH/2.0,self.cell.bbox().width()/2.0,self.cell.bbox().height()/2.0-PIN_LENGTH/2.0)
@@ -831,12 +834,14 @@ class PCMSpiralBraggGratingSlab(pya.PCellDeclarationHelper):
     shapes(LayerSiN_Slab).insert(element)
 
     DeviceHeight = self.cell.bbox().height()*dbu
-    #WG1
-    wvg = pya.Path([Point((DeviceWidthNS/2.0)-w/dbu, 0),Point((DeviceWidthNS/2.0)-w/dbu, DeviceHeight/dbu/2.0)], w/dbu*2.0)
-    shapes(LayerSiN).insert(wvg)  
-    #WG2
-    wvg = pya.Path([Point((-DeviceWidthNS/2.0)+w/dbu, 0),Point((-DeviceWidthNS/2.0)+w/dbu, -DeviceHeight/dbu/2.0)], w/dbu*2.0)
-    shapes(LayerSiN).insert(wvg)
+
+    #WG1  
+    wg1 = Box(DeviceWidthNS/2.0,0,DeviceWidthNS/2.0-2*w/dbu,DeviceHeight/dbu/2.0)
+    shapes(LayerSiN).insert(wg1)
+    #WG2  
+    wg2 = Box(-DeviceWidthNS/2.0,0,-DeviceWidthNS/2.0+2*w/dbu,-DeviceHeight/dbu/2.0)
+    shapes(LayerSiN).insert(wg2)
+    
     #Pin1
     pin = pya.Path([Point((-DeviceWidthNS/2.0)+w/dbu, -DeviceHeight/2.0/dbu+PIN_LENGTH/2.0), Point((-DeviceWidthNS/2.0)+w/dbu,-DeviceHeight/2.0/dbu-PIN_LENGTH/2.0)], w/dbu*2.0)
     shapes(LayerPinRecN).insert(pin)
@@ -1047,19 +1052,14 @@ class Spiral_NoCenterBraggGrating(pya.PCellDeclarationHelper):
     shapes(LayerSiN).insert(element)
     #shapes(LayerSiN).insert(Polygon.from_dpoly(dpolygon))      
     
-    # Create the pins, as short paths:
-    #LendX = result[4]
-    #RendX = -result[4]
-    #isEven = result[5] #Left and Right sides swap depending on the circle drawn, this returns which side it should be on
-    
-    #if isEven == True:
-      #DeviceHeight = self.cell.bbox().height()*dbu
-      #MOD = 1 #Based on the side, modifies certain values that are just scalar additions below    
-    #else:
-      #DeviceHeight = -self.cell.bbox().height()*dbu
-      #MOD = -1
-
     DeviceHeight = self.cell.bbox().height()*dbu
+    #WG1  
+    wg1 = Box(self.cell.bbox().width()/2.0,0,self.cell.bbox().width()/2.0-2*w/dbu,DeviceHeight/dbu/2.0)
+    shapes(LayerSiN).insert(wg1)
+    #WG2  
+    wg2 = Box(-self.cell.bbox().width()/2.0,0,-self.cell.bbox().width()/2.0+2*w/dbu,-DeviceHeight/dbu/2.0)
+    shapes(LayerSiN).insert(wg2)
+    '''
     #waveguides, didnt use pathing because it has some rounding errors in terms of width   
     #dpts=[pya.DPoint(LendX+w, 0),pya.DPoint(LendX-w, 0),pya.DPoint(LendX-w, DeviceHeight/2.0),pya.DPoint(LendX+w, DeviceHeight/2.0 )]
     #dpolygon = DPolygon(round(dpts))
@@ -1076,7 +1076,8 @@ class Spiral_NoCenterBraggGrating(pya.PCellDeclarationHelper):
 
     wvg = pya.Path([Point(-(self.cell.bbox().width()/2.0)+w/dbu, 0),Point(-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/dbu/2.0)], w/dbu*2.0)
     shapes(LayerSiN).insert(wvg)
-
+    '''
+    
     #pin = pya.Path([Point((RendX)/dbu*1.0, -DeviceHeight/2.0/dbu-PIN_LENGTH/2.0), Point((RendX)/dbu*1.0,-DeviceHeight/2.0/dbu+PIN_LENGTH/2.0)], w/dbu*2.0)
     pin = pya.Path([Point(-(self.cell.bbox().width()/2.0)+w/dbu, -DeviceHeight/2.0/dbu+PIN_LENGTH/2.0), Point(-(self.cell.bbox().width()/2.0)+w/dbu,-DeviceHeight/2.0/dbu-PIN_LENGTH/2.0)], w/dbu*2.0)
     shapes(LayerPinRecN).insert(pin)
@@ -1107,7 +1108,8 @@ class SiEPIC(pya.Library):
   """
 
   def __init__(self):
-
+  
+    tech_name = 'EBeam'
     print("Initializing Adiabatic Spiral PCells library.")
   
     # Set the description
@@ -1120,8 +1122,12 @@ class SiEPIC(pya.Library):
     
     # Register us with the name "Adiabatic_Spirals".
     # If a library with that name already existed, it will be replaced then.
-    self.register("Adiabatic_Spirals")
- 
+    self.register("PCMSpiral")
+    
+    if int(Application.instance().version().split('.')[1]) &gt; 24:
+      # KLayout v0.25 introduced technology variable:
+      self.technology=tech_name
+
 # Instantiate and register the library
 SiEPIC()
 </text>
