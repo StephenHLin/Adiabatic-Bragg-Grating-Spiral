@@ -29,6 +29,7 @@ Below is an image of the parameters to clear up confusion:
 - [ ] Chirping of grating period
 - [ ] Waveguide width increase/decrease from input to output
 - [x] Slab waveguide
+- [x] CDC Structure
 
 ## Known Issues
 - Gap: The gap is smaller than designated in the first rotation as the spiral is still growing. Suggested solution: set the gap bigger than intended
