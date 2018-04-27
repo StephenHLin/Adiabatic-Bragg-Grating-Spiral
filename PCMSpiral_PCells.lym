@@ -1572,6 +1572,7 @@ class SiEPIC(pya.Library):
     self.layout().register_pcell("[2] Spiral_BraggGrating_Slab", PCMSpiralBraggGratingSlab())
     self.layout().register_pcell("[3] Spiral_NoCenterBraggGrating", Spiral_NoCenterBraggGrating())
     self.layout().register_pcell("[4] CDC_BraggGrating", CDCSpiralBraggGrating())
+    self.layout().register_pcell("[5] SpiralWaveguide", SpiralWaveguide())
     
     # Register us with the name "Adiabatic_Spirals".
     # If a library with that name already existed, it will be replaced then.
