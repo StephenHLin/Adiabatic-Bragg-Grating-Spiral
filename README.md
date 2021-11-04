@@ -1,8 +1,8 @@
 # Adiabatic Bragg Grating Spiral
 
 This code was made as an addon component for the [SiEPIC PDK](https://github.com/lukasc-ubc/SiEPIC_EBeam_PDK/). The code can generate polygons for spirals with gratings.
-![Alt text](/images/spiralcdc.PNG)
-![Alt text](/images/gratings.PNG)
+<img src="/images/spiralcdc.JPG" alt="drawing" width="400"/>
+<img src="/images/gratings.JPG" alt="drawing" width="400"/>
 
 ## Requirements
 - [SiEPIC PDK](https://github.com/lukasc-ubc/SiEPIC_EBeam_PDK)
